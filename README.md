@@ -59,16 +59,52 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to view the app locally.
 
-## Deploy
+## Deploy (Vercel)
 
-Deploy to Vercel and connect the [treasurefinder](https://github.com/benz862/treasurefinder) repository. Set environment variables from `.env.example`, with:
+Production is deployed from the [treasurefinder](https://github.com/benz862/treasurefinder) repository.
+
+Set these environment variables in **Vercel → Project → Settings → Environment Variables** (Production):
 
 ```env
 NEXT_PUBLIC_SITE_URL=https://treasurefinder.app
+
 NEXT_PUBLIC_SUPABASE_URL=https://tbbywzbmzxlzufyidvjm.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=
+
+NEXT_PUBLIC_ADMIN_EMAIL=
 ```
 
-Add the same Supabase keys in Vercel project settings.
+### Stripe webhook
+
+In Stripe → Developers → Webhooks, point the endpoint to:
+
+`https://treasurefinder.app/api/stripe-webhook`
+
+Enable this event only:
+
+- `checkout.session.completed`
+
+Paste the webhook signing secret into Vercel as `STRIPE_WEBHOOK_SECRET`.
+
+### Google Maps
+
+Enable these APIs in Google Cloud:
+
+- Maps JavaScript API
+- Geocoding API
+
+Use one API key for `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`.
+
+### Local development
+
+Copy `.env.example` to `.env.local` and use the same keys as production (or Stripe/Supabase test keys).
 
 ## License
 
