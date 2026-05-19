@@ -73,7 +73,7 @@ export default function HomePage() {
                 {
                   step: "1",
                   title: "Choose a plan & pay",
-                  desc: "Pick Starter, Neighborhood, or Community based on how many homes are participating.",
+                  desc: "Pick Starter, Neighborhood, or Community Mega Sale based on how many homes are participating.",
                 },
                 {
                   step: "2",
@@ -155,7 +155,7 @@ export default function HomePage() {
                 },
                 {
                   q: "How many homes can I add?",
-                  a: "Depends on your plan: Starter allows 5 homes, Neighborhood allows 20, and Community allows 75.",
+                  a: "Starter allows 5 homes ($19), Neighborhood allows 20 ($39), and Community Mega Sale allows 75 ($79).",
                 },
                 {
                   q: "Can I print a flyer?",

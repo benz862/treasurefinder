@@ -84,6 +84,7 @@ export function EventForm({ profileId, availableTier, event }: EventFormProps) {
         status: isEditing ? status : "draft",
         tier,
         max_homes: tierConfig?.maxHomes || 5,
+        is_featured: isEditing ? event!.is_featured : Boolean(tierConfig?.includesFeatured),
         payment_status: isEditing ? event!.payment_status : "paid",
       };
 

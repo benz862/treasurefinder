@@ -1,0 +1,34 @@
+id,Name,Date (UTC),Description,Url,Tax Code,internal_notes (metadata),fulfillment_required (metadata),to_tier (metadata),renewal_price (metadata),upgrade_credit (metadata),from_tier (metadata),first_year_upgrade_price (metadata),private_vault (metadata),hosting_years (metadata),billing (metadata),cards_included (metadata),voice_uploads (metadata),product_key (metadata),ai_help (metadata),hosting_days (metadata),video_uploads (metadata),archive_download (metadata),product_statement_descriptor (metadata),metadata_output_modes (metadata),price_type (metadata),metadata_tier (metadata),metadata_addon_type (metadata),price_nickname (metadata),metadata_plan (metadata),product_id (metadata),price_active (metadata),product_active (metadata),Tax Code (metadata),id (metadata),price_id (metadata),recurring_interval (metadata),currency (metadata),lookup_key (metadata),type (metadata),interval (metadata),lifetime_number_reservation (metadata),early_gemini_access (metadata),vip_support (metadata),image_generation (metadata),relationship_mode (metadata),calendar_integration (metadata),dedicated_number (metadata),augmentations_per_month (metadata),memory_window (metadata),product.images (metadata),price.metadata.tier (metadata),price.currency (metadata),product.metadata.category (metadata),product.metadata.features (metadata),price.nickname (metadata),price.recurring.interval (metadata),Metadata:token_type (metadata),Active (metadata),Metadata:plan_type (metadata),Metadata:eligibility (metadata),Currency (metadata),Product type (metadata),Interval (metadata),Tax behavior (metadata),Nickname (metadata),Metadata Title (metadata),Metadata Content (metadata),plan (metadata),tier (metadata),planType (metadata),shareLinkDuration (metadata),maxProfiles (metadata),monthlyPdfs (metadata),includes_audio (metadata),delivery (metadata),product_type (metadata)
+prod_UXzswy59x7W35i,Community Mega Sale Event,2026-05-19 20:04,"For large-scale community, town-wide, and charity garage sale events.
+
+Includes:
+
+* Up to 75 participating homes
+* Interactive event map
+* Up to 8 photos per home
+* Featured event placement
+* Printable flyers with QR codes
+* Enhanced event branding
+* Category filtering
+* Priority support",,,"Ideal for: town-wide sales, large HOAs, flea market weekends, fundraiser events, city events",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+prod_UXzsDsIdMYJw4E,Neighborhood Garage Sale Event,2026-05-19 20:04,"Designed for neighborhood-wide garage sale events.
+
+Includes:
+
+* Up to 20 participating homes
+* Interactive public map
+* Up to 5 photos per home
+* Category filtering
+* Printable flyer with QR code
+* Priority event styling
+* Social sharing tools",,,"This will likely become your MOST POPULAR tier. Ideal for: subdivisions, community groups, churches, schools, annual neighborhood sales",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+prod_UXzsCubzPrJxJE,Starter Garage Sale Event,2026-05-19 20:04,"Perfect for small family or multi-family garage sales.
+
+Includes:
+
+* Up to 5 participating homes
+* Interactive public map
+* Event page
+* Up to 3 photos per home
+* Mobile-friendly sharing page
+* Social media sharing links",,,"This is the entry-level plan. Ideal for: families, small streets, first-time users",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

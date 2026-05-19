@@ -31,6 +31,7 @@ export function PricingCard({ tierId, onSelect, loading, selectedTier }: Pricing
         <span className="text-4xl font-bold text-teal">{tier.priceDisplay}</span>
         <span className="text-sm text-charcoal/60"> one-time</span>
       </p>
+      <p className="mt-3 text-sm text-charcoal/60">{tier.idealFor}</p>
       <ul className="mt-6 flex-1 space-y-3">
         {tier.features.map((feature) => (
           <li key={feature} className="flex items-start gap-2 text-sm text-charcoal/80">

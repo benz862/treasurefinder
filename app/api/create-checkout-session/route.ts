@@ -33,22 +33,27 @@ export async function POST(request: Request) {
     const stripe = getStripe();
     const siteUrl = getSiteUrl();
 
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      payment_method_types: ["card"],
-      line_items: [
-        {
+    const prices = await stripe.prices.list({
+      product: tierConfig.stripeProductId,
+      active: true,
+      limit: 1,
+    });
+
+    const lineItem = prices.data[0]?.id
+      ? { price: prices.data[0].id, quantity: 1 }
+      : {
           price_data: {
             currency: "usd",
-            product_data: {
-              name: tierConfig.name,
-              description: `Treasure Finder ${tierConfig.name} — up to ${tierConfig.maxHomes} homes`,
-            },
+            product: tierConfig.stripeProductId,
             unit_amount: tierConfig.price,
           },
           quantity: 1,
-        },
-      ],
+        };
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["card"],
+      line_items: [lineItem],
       metadata: {
         organizer_id: profile.id,
         tier,

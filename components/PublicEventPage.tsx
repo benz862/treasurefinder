@@ -45,6 +45,8 @@ export function PublicEventPage({ event, isSample = false }: PublicEventPageProp
   const eventUrl = `${getSiteUrl()}/event/${event.slug}`;
   const tier = getTier(event.tier);
   const showFlyer = tier?.includesFlyer;
+  const showFeatured = event.is_featured || tier?.includesFeatured;
+  const showPriorityStyling = tier?.includesPriorityStyling;
 
   return (
     <div className="min-h-screen bg-cream">
@@ -59,15 +61,22 @@ export function PublicEventPage({ event, isSample = false }: PublicEventPageProp
 
       <section
         className={`px-4 py-12 ${
-          event.is_featured
+          showFeatured
             ? "bg-gradient-to-br from-teal to-teal/80 text-white"
-            : "bg-teal text-white"
+            : showPriorityStyling
+              ? "bg-gradient-to-br from-yellow/40 via-teal to-teal/90 text-white"
+              : "bg-teal text-white"
         }`}
       >
         <div className="mx-auto max-w-4xl text-center">
-          {event.is_featured && (
+          {showFeatured && (
             <span className="mb-3 inline-flex items-center gap-1 rounded-full bg-yellow px-3 py-1 text-xs font-bold text-charcoal">
               <Sparkles className="h-3.5 w-3.5" /> Featured Event
+            </span>
+          )}
+          {showPriorityStyling && !showFeatured && (
+            <span className="mb-3 inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-xs font-bold text-white">
+              Neighborhood Event
             </span>
           )}
           <h1 className="text-3xl font-bold md:text-4xl">{event.title}</h1>
