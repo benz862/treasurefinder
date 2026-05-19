@@ -47,11 +47,33 @@ export function MapView({
       return;
     }
 
+    const setMapsError = (message: string) => {
+      googleMapRef.current = null;
+      markersRef.current.forEach((m) => m.setMap(null));
+      markersRef.current = [];
+      setError(message);
+    };
+
     window.gm_authFailure = () => {
-      setError(
-        "Google Maps could not authenticate this site. Check billing in Google Cloud and add treasurefinder.app to your API key restrictions."
+      setMapsError(
+        "Google Maps authentication failed. Enable billing, turn on Maps JavaScript API, and allow https://treasurefinder.app/* and https://www.treasurefinder.app/* in your API key restrictions."
       );
     };
+
+    const onWindowError = (event: ErrorEvent) => {
+      const message = event.message ?? "";
+      if (message.includes("BillingNotEnabledMapError")) {
+        setMapsError(
+          "Google Maps billing is not enabled. Link a billing account in Google Cloud Console for the project that owns this API key."
+        );
+      } else if (message.includes("ApiNotActivatedMapError")) {
+        setMapsError(
+          "Maps JavaScript API is not enabled. In Google Cloud Console, enable Maps JavaScript API for the project that owns this API key."
+        );
+      }
+    };
+
+    window.addEventListener("error", onWindowError);
 
     window.__treasureFinderMapsReady = () => {
       if (mapsApiReady()) {
@@ -70,6 +92,7 @@ export function MapView({
 
       return () => {
         window.clearInterval(interval);
+        window.removeEventListener("error", onWindowError);
         delete window.gm_authFailure;
         delete window.__treasureFinderMapsReady;
       };
@@ -84,6 +107,7 @@ export function MapView({
     document.head.appendChild(script);
 
     return () => {
+      window.removeEventListener("error", onWindowError);
       delete window.gm_authFailure;
       delete window.__treasureFinderMapsReady;
     };
@@ -150,7 +174,10 @@ export function MapView({
 
   if (error) {
     return (
-      <div className={`${className} flex items-center justify-center bg-teal/5 p-6 text-center`}>
+      <div
+        className={`${className} flex items-center justify-center bg-teal/5 p-6 text-center`}
+        aria-live="polite"
+      >
         <div>
           <p className="font-medium text-charcoal">Map unavailable</p>
           <p className="mt-1 text-sm text-charcoal/60">{error}</p>
