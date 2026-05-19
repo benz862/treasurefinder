@@ -14,7 +14,7 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 
 const DEMO_ACCOUNTS = [
   {
-    email: "info@skillbinder.com",
+    email: "info+starter@skillbinder.com",
     password: "Test10",
     tier: "starter",
     amount: 1900,
