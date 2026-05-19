@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { StatusBadge } from "./StatusBadge";
 import type { Event } from "@/types/database";
-import { formatDate } from "@/lib/utils";
+import { formatEventDateRange } from "@/lib/utils";
 
 interface EventCardProps {
   event: Event;
@@ -16,7 +16,7 @@ export function EventCard({ event, homeCount = 0, showActions = false }: EventCa
         <div>
           <h3 className="text-lg font-bold text-charcoal">{event.title}</h3>
           <p className="mt-1 text-sm text-charcoal/60">
-            {formatDate(event.event_date)} · {event.city}, {event.region}
+            {formatEventDateRange(event.event_date, event.event_end_date)} · {event.city}, {event.region}
           </p>
         </div>
         <StatusBadge status={event.status} />

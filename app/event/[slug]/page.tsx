@@ -4,7 +4,7 @@ import { Header, Footer } from "@/components/Layout";
 import { PublicEventPage } from "@/components/PublicEventPage";
 import { createClient } from "@/lib/supabase/server";
 import { SAMPLE_EVENT, SAMPLE_EVENT_SLUG } from "@/lib/sample-event";
-import { formatDate } from "@/lib/utils";
+import { formatEventDateRange } from "@/lib/utils";
 import type { EventWithHomes } from "@/types/database";
 
 interface PageProps {
@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!event) return { title: "Event Not Found" };
 
   return {
-    title: `${event.title} | ${formatDate(event.event_date)}`,
+    title: `${event.title} | ${formatEventDateRange(event.event_date, event.event_end_date)}`,
     description:
       event.description ||
       `Browse participating homes and view the interactive map for ${event.title}.`,

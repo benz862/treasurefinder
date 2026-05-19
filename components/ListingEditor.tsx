@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CATEGORIES } from "@/lib/categories";
-import { formatDate } from "@/lib/utils";
+import { formatEventDateRange } from "@/lib/utils";
 import type { ApprovalStatus, HomePhoto } from "@/types/database";
 import { CheckCircle2, ImagePlus, Loader2, Save, Send, X } from "lucide-react";
 
@@ -35,7 +35,7 @@ export function ListingEditor({ token }: ListingEditorProps) {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [eventTitle, setEventTitle] = useState("");
-  const [eventDate, setEventDate] = useState("");
+  const [eventDateLabel, setEventDateLabel] = useState("");
   const [editable, setEditable] = useState(true);
   const [maxPhotos, setMaxPhotos] = useState(3);
   const [approvalStatus, setApprovalStatus] = useState<ApprovalStatus>("draft");
@@ -64,7 +64,9 @@ export function ListingEditor({ token }: ListingEditorProps) {
 
         const listing: ListingData = data.listing;
         setEventTitle(data.event.title);
-        setEventDate(data.event.event_date);
+        setEventDateLabel(
+          formatEventDateRange(data.event.event_date, data.event.event_end_date)
+        );
         setEditable(data.editable);
         setMaxPhotos(data.maxPhotos);
         setApprovalStatus(listing.approval_status);
@@ -267,7 +269,7 @@ export function ListingEditor({ token }: ListingEditorProps) {
       <div className="rounded-3xl border border-teal-100 bg-white p-6 shadow-sm sm:p-8">
         <p className="text-sm font-medium uppercase tracking-wide text-teal">Your garage sale listing</p>
         <h1 className="mt-2 text-2xl font-bold text-charcoal">{eventTitle}</h1>
-        <p className="mt-1 text-sm text-charcoal/60">{formatDate(eventDate)}</p>
+        <p className="mt-1 text-sm text-charcoal/60">{eventDateLabel}</p>
 
         {statusMessage && (
           <div className="mt-4 rounded-xl bg-teal/5 px-4 py-3 text-sm text-charcoal">

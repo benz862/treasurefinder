@@ -14,6 +14,40 @@ export function formatDate(date: string | Date) {
   }).format(typeof date === "string" ? new Date(date + "T12:00:00") : date);
 }
 
+export function formatDateShort(date: string | Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(typeof date === "string" ? new Date(date + "T12:00:00") : date);
+}
+
+export function formatEventDateRange(startDate: string, endDate?: string | null) {
+  if (!endDate || endDate === startDate) {
+    return formatDate(startDate);
+  }
+
+  const start = new Date(`${startDate}T12:00:00`);
+  const end = new Date(`${endDate}T12:00:00`);
+
+  const sameYear = start.getFullYear() === end.getFullYear();
+  const sameMonth = sameYear && start.getMonth() === end.getMonth();
+
+  if (sameMonth) {
+    const monthDay = new Intl.DateTimeFormat("en-US", {
+      weekday: "long",
+      month: "long",
+    }).format(start);
+    return `${monthDay} ${start.getDate()}–${end.getDate()}, ${start.getFullYear()}`;
+  }
+
+  if (sameYear) {
+    return `${formatDateShort(startDate)} – ${formatDateShort(endDate)}`;
+  }
+
+  return `${formatDate(startDate)} – ${formatDate(endDate)}`;
+}
+
 export function formatTime(time: string) {
   const [hours, minutes] = time.split(":");
   const h = parseInt(hours, 10);

@@ -41,6 +41,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
     event: {
       title: listing.events.title,
       event_date: listing.events.event_date,
+      event_end_date: listing.events.event_end_date,
     },
     maxPhotos: tier?.maxPhotosPerHome || 3,
     editable,

@@ -6,7 +6,7 @@ import { HomeSaleCard } from "./HomeSaleCard";
 import { CategoryFilter } from "./CategoryFilter";
 import { ShareButton } from "./ShareButton";
 import { QRCodeGenerator } from "./QRCodeGenerator";
-import { formatDate, formatTime, getSiteUrl } from "@/lib/utils";
+import { formatEventDateRange, formatTime, getSiteUrl } from "@/lib/utils";
 import { getTier } from "@/lib/tiers";
 import type { EventWithHomes } from "@/types/database";
 import { Calendar, Clock, MapPin, Sparkles } from "lucide-react";
@@ -83,7 +83,7 @@ export function PublicEventPage({ event, isSample = false }: PublicEventPageProp
           <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm text-white/90">
             <span className="flex items-center gap-1">
               <Calendar className="h-4 w-4" />
-              {formatDate(event.event_date)}
+              {formatEventDateRange(event.event_date, event.event_end_date)}
             </span>
             <span className="flex items-center gap-1">
               <Clock className="h-4 w-4" />

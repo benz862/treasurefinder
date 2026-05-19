@@ -42,7 +42,7 @@ export async function getActiveListingByToken(token: string) {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("homes")
-    .select("*, events(id, title, tier, event_date, status), home_photos(*)")
+    .select("*, events(id, title, tier, event_date, event_end_date, status), home_photos(*)")
     .eq("invite_token", token)
     .eq("invite_status", "active")
     .single();
@@ -61,6 +61,7 @@ export type ListingWithEvent = Home & {
     title: string;
     tier: string;
     event_date: string;
+    event_end_date: string | null;
     status: string;
   };
   home_photos: HomePhoto[];

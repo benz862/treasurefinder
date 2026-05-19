@@ -20,6 +20,7 @@ export const SAMPLE_EVENT: EventWithHomes = {
   description:
     "Join us for the annual Maplewood neighborhood garage sale! Fifteen homes participating with furniture, toys, tools, clothing, and more. Grab a coffee and stroll the neighborhood — early birds welcome!",
   event_date: "2026-06-08",
+  event_end_date: "2026-06-10",
   start_time: "08:00:00",
   end_time: "15:00:00",
   city: "Maplewood",

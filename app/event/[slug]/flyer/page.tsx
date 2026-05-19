@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SAMPLE_EVENT, SAMPLE_EVENT_SLUG } from "@/lib/sample-event";
 import { getTier } from "@/lib/tiers";
-import { formatDate, formatTime, getSiteUrl } from "@/lib/utils";
+import { formatEventDateRange, formatTime, getSiteUrl } from "@/lib/utils";
 import { QRCodeSVG } from "qrcode.react";
 import { PrintButton } from "@/components/PrintButton";
 
@@ -49,7 +49,7 @@ export default async function FlyerPage({ params }: PageProps) {
         </p>
         <h1 className="mt-4 text-3xl font-bold text-charcoal">{event.title}</h1>
         <p className="mt-4 text-xl text-charcoal">
-          {formatDate(event.event_date)}
+          {formatEventDateRange(event.event_date, event.event_end_date)}
         </p>
         <p className="text-lg text-charcoal/80">
           {formatTime(event.start_time)} – {formatTime(event.end_time)}

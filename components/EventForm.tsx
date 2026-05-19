@@ -21,6 +21,11 @@ export function EventForm({ profileId, availableTier, event }: EventFormProps) {
   const [slug, setSlug] = useState(event?.slug || "");
   const [description, setDescription] = useState(event?.description || "");
   const [eventDate, setEventDate] = useState(event?.event_date || "");
+  const [eventEndDate, setEventEndDate] = useState(
+    event?.event_end_date && event.event_end_date !== event?.event_date
+      ? event.event_end_date
+      : ""
+  );
   const [startTime, setStartTime] = useState(event?.start_time?.slice(0, 5) || "08:00");
   const [endTime, setEndTime] = useState(event?.end_time?.slice(0, 5) || "15:00");
   const [city, setCity] = useState(event?.city || "");
@@ -55,6 +60,12 @@ export function EventForm({ profileId, availableTier, event }: EventFormProps) {
       return;
     }
 
+    if (eventEndDate && eventEndDate < eventDate) {
+      setError("End date must be on or after the start date.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const geoRes = await fetch("/api/geocode", {
         method: "POST",
@@ -73,6 +84,7 @@ export function EventForm({ profileId, availableTier, event }: EventFormProps) {
         slug,
         description: description || null,
         event_date: eventDate,
+        event_end_date: eventEndDate || eventDate,
         start_time: startTime,
         end_time: endTime,
         city,
@@ -149,14 +161,32 @@ export function EventForm({ profileId, availableTier, event }: EventFormProps) {
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-charcoal">Event Date *</label>
+          <label className="block text-sm font-medium text-charcoal">Start Date *</label>
           <input
             type="date"
             required
             value={eventDate}
-            onChange={(e) => setEventDate(e.target.value)}
+            onChange={(e) => {
+              setEventDate(e.target.value);
+              if (eventEndDate && eventEndDate < e.target.value) {
+                setEventEndDate("");
+              }
+            }}
             className="mt-1 w-full rounded-xl border border-teal-100 px-4 py-3 focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20"
           />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-charcoal">End Date</label>
+          <input
+            type="date"
+            value={eventEndDate}
+            min={eventDate || undefined}
+            onChange={(e) => setEventEndDate(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-teal-100 px-4 py-3 focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20"
+          />
+          <p className="mt-1 text-xs text-charcoal/50">
+            Leave blank for a one-day sale, or pick the last day for multi-day events.
+          </p>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>

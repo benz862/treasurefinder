@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { StatusBadge } from "@/components/StatusBadge";
 import { DashboardShell } from "@/components/DashboardShell";
-import { formatDate } from "@/lib/utils";
+import { formatEventDateRange } from "@/lib/utils";
 import { toggleFeatured, toggleEventStatus, deleteEvent } from "./actions";
 
 export default async function AdminPage() {
@@ -83,7 +83,9 @@ export default async function AdminPage() {
                   <td className="px-4 py-3 text-charcoal/70">
                     {(event.profiles as { email: string })?.email}
                   </td>
-                  <td className="px-4 py-3">{formatDate(event.event_date)}</td>
+                  <td className="px-4 py-3">
+                    {formatEventDateRange(event.event_date, event.event_end_date)}
+                  </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={event.status} />
                   </td>

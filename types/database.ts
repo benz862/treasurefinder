@@ -17,6 +17,7 @@ export type Event = {
   slug: string;
   description: string | null;
   event_date: string;
+  event_end_date: string | null;
   start_time: string;
   end_time: string;
   city: string;
