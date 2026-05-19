@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/DashboardShell";
 import { EventForm } from "@/components/EventForm";
+import { ADMIN_EVENT_TIER, isPlatformAdmin } from "@/lib/admin";
+import { getTier } from "@/lib/tiers";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function NewEventPage() {
@@ -17,6 +19,8 @@ export default async function NewEventPage() {
 
   if (!profile) redirect("/auth/login");
 
+  const isAdmin = isPlatformAdmin({ email: user.email, role: profile.role });
+
   const { data: availablePayment } = await supabase
     .from("payments")
     .select("*")
@@ -26,6 +30,15 @@ export default async function NewEventPage() {
     .order("created_at", { ascending: false })
     .limit(1)
     .single();
+
+  const adminBypass = isAdmin && !availablePayment;
+  const availableTier = availablePayment
+    ? { tier: availablePayment.tier, paymentId: availablePayment.id }
+    : isAdmin
+      ? { tier: ADMIN_EVENT_TIER }
+      : null;
+
+  const adminTierLabel = getTier(ADMIN_EVENT_TIER)?.name;
 
   return (
     <DashboardShell userEmail={user.email}>
@@ -37,6 +50,11 @@ export default async function NewEventPage() {
         {availablePayment ? (
           <p className="mt-1 text-sm text-charcoal/60">
             Using your <span className="capitalize font-medium">{availablePayment.tier}</span> plan.
+          </p>
+        ) : adminBypass ? (
+          <p className="mt-1 text-sm text-charcoal/60">
+            Admin account — <span className="font-medium">{adminTierLabel}</span> access, no payment
+            required.
           </p>
         ) : (
           <div className="mt-4 rounded-xl border border-yellow/50 bg-yellow/20 p-4">
@@ -50,14 +68,11 @@ export default async function NewEventPage() {
         )}
       </div>
 
-      {profile && (
+      {availableTier && (
         <EventForm
           profileId={profile.id}
-          availableTier={
-            availablePayment
-              ? { tier: availablePayment.tier, paymentId: availablePayment.id }
-              : null
-          }
+          availableTier={availableTier}
+          adminBypass={adminBypass}
         />
       )}
     </DashboardShell>

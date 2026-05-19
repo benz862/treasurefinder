@@ -5,15 +5,22 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { slugify } from "@/lib/utils";
 import { getTier, type TierId } from "@/lib/tiers";
+import { ADMIN_EVENT_TIER } from "@/lib/admin";
 import type { Event } from "@/types/database";
 
 interface EventFormProps {
   profileId: string;
-  availableTier?: { tier: string; paymentId: string } | null;
+  availableTier?: { tier: string; paymentId?: string } | null;
+  adminBypass?: boolean;
   event?: Event;
 }
 
-export function EventForm({ profileId, availableTier, event }: EventFormProps) {
+export function EventForm({
+  profileId,
+  availableTier,
+  adminBypass = false,
+  event,
+}: EventFormProps) {
   const router = useRouter();
   const isEditing = !!event;
 
@@ -48,7 +55,7 @@ export function EventForm({ profileId, availableTier, event }: EventFormProps) {
     setLoading(true);
     setError(null);
 
-    if (!isEditing && !availableTier) {
+    if (!isEditing && !availableTier && !adminBypass) {
       setError("Please purchase a plan before creating an event.");
       setLoading(false);
       return;
@@ -75,7 +82,9 @@ export function EventForm({ profileId, availableTier, event }: EventFormProps) {
       const geo = await geoRes.json();
 
       const supabase = createClient();
-      const tier = isEditing ? event!.tier : availableTier?.tier || "starter";
+      const tier = isEditing
+        ? event!.tier
+        : availableTier?.tier || (adminBypass ? ADMIN_EVENT_TIER : "starter");
       const tierConfig = getTier(tier as TierId);
 
       const payload = {
