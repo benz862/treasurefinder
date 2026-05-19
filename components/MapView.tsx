@@ -14,7 +14,12 @@ interface MapViewProps {
 declare global {
   interface Window {
     gm_authFailure?: () => void;
+    __treasureFinderMapsReady?: () => void;
   }
+}
+
+function mapsApiReady() {
+  return Boolean(window.google?.maps?.Map);
 }
 
 export function MapView({
@@ -37,87 +42,109 @@ export function MapView({
       return;
     }
 
-    window.gm_authFailure = () => {
-      setError(
-        "Google Maps could not authenticate this site. Enable billing in Google Cloud and check your API key restrictions for treasurefinder.app."
-      );
-    };
-
-    if (window.google?.maps) {
+    if (mapsApiReady()) {
       setLoaded(true);
       return;
     }
 
+    window.gm_authFailure = () => {
+      setError(
+        "Google Maps could not authenticate this site. Check billing in Google Cloud and add treasurefinder.app to your API key restrictions."
+      );
+    };
+
+    window.__treasureFinderMapsReady = () => {
+      if (mapsApiReady()) {
+        setLoaded(true);
+      }
+    };
+
     const existing = document.querySelector('script[data-treasurefinder-maps="true"]');
     if (existing) {
-      existing.addEventListener("load", () => setLoaded(true));
-      existing.addEventListener("error", () => setError("Failed to load Google Maps."));
-      return;
+      const interval = window.setInterval(() => {
+        if (mapsApiReady()) {
+          window.clearInterval(interval);
+          setLoaded(true);
+        }
+      }, 100);
+
+      return () => {
+        window.clearInterval(interval);
+        delete window.gm_authFailure;
+        delete window.__treasureFinderMapsReady;
+      };
     }
 
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=__treasureFinderMapsReady`;
     script.async = true;
+    script.defer = true;
     script.dataset.treasurefinderMaps = "true";
-    script.onload = () => setLoaded(true);
     script.onerror = () => setError("Failed to load Google Maps.");
     document.head.appendChild(script);
 
     return () => {
       delete window.gm_authFailure;
+      delete window.__treasureFinderMapsReady;
     };
   }, []);
 
   useEffect(() => {
-    if (!loaded || !mapRef.current || !window.google?.maps) return;
+    if (!loaded || !mapRef.current || !mapsApiReady()) return;
 
-    const defaultCenter = center ||
-      (pins.length > 0
-        ? { lat: pins[0].lat, lng: pins[0].lng }
-        : { lat: 40.7128, lng: -74.006 });
+    try {
+      const defaultCenter = center ||
+        (pins.length > 0
+          ? { lat: pins[0].lat, lng: pins[0].lng }
+          : { lat: 40.7128, lng: -74.006 });
 
-    if (!googleMapRef.current) {
-      googleMapRef.current = new google.maps.Map(mapRef.current, {
-        center: defaultCenter,
-        zoom: 14,
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: true,
-        styles: [{ featureType: "poi", stylers: [{ visibility: "off" }] }],
+      if (!googleMapRef.current) {
+        googleMapRef.current = new google.maps.Map(mapRef.current, {
+          center: defaultCenter,
+          zoom: 14,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: true,
+          styles: [{ featureType: "poi", stylers: [{ visibility: "off" }] }],
+        });
+      } else {
+        googleMapRef.current.setCenter(defaultCenter);
+      }
+
+      markersRef.current.forEach((m) => m.setMap(null));
+      markersRef.current = [];
+
+      const bounds = new google.maps.LatLngBounds();
+
+      pins.forEach((pin) => {
+        const marker = new google.maps.Marker({
+          position: { lat: pin.lat, lng: pin.lng },
+          map: googleMapRef.current!,
+          title: pin.title,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: selectedPinId === pin.id ? 12 : 9,
+            fillColor: selectedPinId === pin.id ? "#FF6B5B" : "#1A6B6B",
+            fillOpacity: 1,
+            strokeColor: "#FFFFFF",
+            strokeWeight: 2,
+          },
+        });
+
+        marker.addListener("click", () => onPinClick?.(pin.id));
+        markersRef.current.push(marker);
+        bounds.extend({ lat: pin.lat, lng: pin.lng });
       });
-    } else {
-      googleMapRef.current.setCenter(defaultCenter);
-    }
 
-    markersRef.current.forEach((m) => m.setMap(null));
-    markersRef.current = [];
-
-    const bounds = new google.maps.LatLngBounds();
-
-    pins.forEach((pin) => {
-      const marker = new google.maps.Marker({
-        position: { lat: pin.lat, lng: pin.lng },
-        map: googleMapRef.current!,
-        title: pin.title,
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: selectedPinId === pin.id ? 12 : 9,
-          fillColor: selectedPinId === pin.id ? "#FF6B5B" : "#1A6B6B",
-          fillOpacity: 1,
-          strokeColor: "#FFFFFF",
-          strokeWeight: 2,
-        },
-      });
-
-      marker.addListener("click", () => onPinClick?.(pin.id));
-      markersRef.current.push(marker);
-      bounds.extend({ lat: pin.lat, lng: pin.lng });
-    });
-
-    if (pins.length > 1) {
-      googleMapRef.current.fitBounds(bounds, 48);
-    } else if (pins.length === 1) {
-      googleMapRef.current.setZoom(15);
+      if (pins.length > 1) {
+        googleMapRef.current.fitBounds(bounds, 48);
+      } else if (pins.length === 1) {
+        googleMapRef.current.setZoom(15);
+      }
+    } catch {
+      setError(
+        "Google Maps failed to initialize. Confirm billing is enabled and Maps JavaScript API is turned on."
+      );
     }
   }, [loaded, pins, center, onPinClick, selectedPinId]);
 
