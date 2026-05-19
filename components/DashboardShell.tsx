@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { MapPin, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
+import { Logo } from "@/components/Logo";
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -10,13 +11,8 @@ export function DashboardShell({ children, userEmail }: DashboardShellProps) {
   return (
     <div className="min-h-screen bg-cream">
       <header className="border-b border-teal-100 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal text-white">
-              <MapPin className="h-4 w-4" />
-            </span>
-            <span className="font-bold text-charcoal">Treasure Finder</span>
-          </Link>
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+          <Logo size="sm" href="/dashboard" />
           <div className="flex items-center gap-4 text-sm">
             {userEmail && (
               <span className="hidden text-charcoal/60 sm:inline">{userEmail}</span>

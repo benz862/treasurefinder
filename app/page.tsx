@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Header, Footer } from "@/components/Layout";
+import { Logo } from "@/components/Logo";
 import { MapPin, Search, Share2, Home, ArrowRight } from "lucide-react";
 
 export default function HomePage() {
@@ -8,13 +9,14 @@ export default function HomePage() {
       <Header />
       <main>
         {/* Hero */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-yellow/40 via-cream to-teal/10 px-4 py-16 md:py-24">
+        <section className="relative overflow-hidden bg-gradient-to-br from-yellow/40 via-cream to-teal/10 px-4 py-12 md:py-20">
           <div className="mx-auto max-w-4xl text-center">
-            <span className="inline-flex items-center gap-1 rounded-full bg-teal/10 px-4 py-1.5 text-sm font-medium text-teal">
+            <Logo size="lg" variant="full" href={null} className="mx-auto" priority />
+            <span className="mt-6 inline-flex items-center gap-1 rounded-full bg-teal/10 px-4 py-1.5 text-sm font-medium text-teal">
               <MapPin className="h-4 w-4" />
               Neighborhood garage sale maps made easy
             </span>
-            <h1 className="mt-6 text-4xl font-bold leading-tight text-charcoal md:text-5xl">
+            <h1 className="mt-6 text-3xl font-bold leading-tight text-charcoal md:text-4xl">
               Turn Your Neighborhood Garage Sale Into a Real Event
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg text-charcoal/70">

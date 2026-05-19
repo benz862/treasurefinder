@@ -14,6 +14,17 @@ export const metadata: Metadata = {
   },
   description:
     "Create beautiful online garage sale event pages with interactive maps, participating homes, and shareable links.",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
+  openGraph: {
+    title: "Treasure Finder",
+    description: "Find it. Love it. Take it home. Garage sales. Community treasures.",
+    url: "https://treasurefinder.app",
+    siteName: "Treasure Finder",
+    images: [{ url: "/logo.png", width: 2041, height: 1275, alt: "Treasure Finder" }],
+  },
 };
 
 export default function RootLayout({

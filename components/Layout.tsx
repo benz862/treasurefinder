@@ -1,16 +1,11 @@
 import Link from "next/link";
-import { MapPin } from "lucide-react";
+import { Logo } from "@/components/Logo";
 
 export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-teal-100 bg-cream/95 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal text-white">
-            <MapPin className="h-5 w-5" />
-          </span>
-          <span className="text-xl font-bold text-charcoal">Treasure Finder</span>
-        </Link>
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+        <Logo size="sm" />
         <nav className="hidden items-center gap-6 text-sm font-medium text-charcoal/80 md:flex">
           <Link href="/pricing" className="hover:text-teal">
             Pricing
@@ -30,7 +25,7 @@ export function Header() {
         </nav>
         <Link
           href="/pricing"
-          className="rounded-full bg-coral px-4 py-2 text-sm font-medium text-white md:hidden"
+          className="shrink-0 rounded-full bg-coral px-4 py-2 text-sm font-medium text-white md:hidden"
         >
           Create Event
         </Link>
@@ -45,8 +40,10 @@ export function Footer() {
       <div className="mx-auto max-w-6xl px-4 py-10">
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-lg font-bold">Treasure Finder</p>
-            <p className="mt-1 text-sm text-white/80">
+            <div className="inline-block rounded-2xl bg-white/95 p-3 shadow-sm">
+              <Logo size="md" variant="compact" href={null} />
+            </div>
+            <p className="mt-3 text-sm text-white/80">
               Turn neighborhood garage sales into organized, map-based events.
             </p>
           </div>
