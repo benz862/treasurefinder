@@ -27,7 +27,8 @@ export async function POST(request: Request) {
 
   const { error: ownerError } = await assertEventOwner(
     home.event_id,
-    session.profile.id
+    session.profile.id,
+    { email: session.user.email, role: session.profile.role }
   );
   if (ownerError) {
     return NextResponse.json({ error: ownerError }, { status: 403 });

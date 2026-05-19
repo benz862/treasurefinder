@@ -1,9 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { env } from "@/lib/env";
 
 export async function updateSession(request: NextRequest) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseUrl = env("NEXT_PUBLIC_SUPABASE_URL");
+  const supabaseAnonKey = env("NEXT_PUBLIC_SUPABASE_ANON_KEY");
   const pathname = request.nextUrl.pathname;
 
   if (!supabaseUrl || !supabaseAnonKey) {
@@ -46,8 +47,8 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (pathname.startsWith("/admin")) {
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-    if (!user || !adminEmail || user.email !== adminEmail) {
+    const adminEmail = env("NEXT_PUBLIC_ADMIN_EMAIL");
+    if (!user || !adminEmail || user.email?.toLowerCase() !== adminEmail.toLowerCase()) {
       const url = request.nextUrl.clone();
       url.pathname = "/";
       return NextResponse.redirect(url);

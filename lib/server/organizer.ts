@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isPlatformAdmin } from "@/lib/admin";
 import type { ApprovalStatus, Home, HomePhoto } from "@/types/database";
 
 export async function getSessionOrganizer() {
@@ -19,9 +20,13 @@ export async function getSessionOrganizer() {
   return profile ? { user, profile } : null;
 }
 
-export async function assertEventOwner(eventId: string, organizerProfileId: string) {
-  const admin = createAdminClient();
-  const { data: event, error } = await admin
+export async function assertEventOwner(
+  eventId: string,
+  organizerProfileId: string,
+  options?: { email?: string | null; role?: string | null }
+) {
+  const supabase = await createClient();
+  const { data: event, error } = await supabase
     .from("events")
     .select("id, organizer_id, tier, max_homes")
     .eq("id", eventId)
@@ -31,7 +36,10 @@ export async function assertEventOwner(eventId: string, organizerProfileId: stri
     return { error: "Event not found", event: null as null };
   }
 
-  if (event.organizer_id !== organizerProfileId) {
+  const isOwner = event.organizer_id === organizerProfileId;
+  const isAdmin = isPlatformAdmin({ email: options?.email, role: options?.role });
+
+  if (!isOwner && !isAdmin) {
     return { error: "Forbidden", event: null as null };
   }
 
