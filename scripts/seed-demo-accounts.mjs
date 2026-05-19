@@ -15,7 +15,7 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 const DEMO_ACCOUNTS = [
   {
     email: "info@skillbinder.com",
-    password: "Test1",
+    password: "Test10",
     tier: "starter",
     amount: 1900,
     fullName: "Starter Demo Organizer",
@@ -38,7 +38,7 @@ const DEMO_ACCOUNTS = [
   },
   {
     email: "info+neighborhood@skillbinder.com",
-    password: "Test2",
+    password: "Test20",
     tier: "neighborhood",
     amount: 3900,
     fullName: "Neighborhood Demo Organizer",
@@ -61,7 +61,7 @@ const DEMO_ACCOUNTS = [
   },
   {
     email: "info+community@skillbinder.com",
-    password: "Test3",
+    password: "Test30",
     tier: "community",
     amount: 7900,
     fullName: "Community Demo Organizer",
