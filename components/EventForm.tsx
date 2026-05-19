@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { slugify } from "@/lib/utils";
 import { getTier, type TierId } from "@/lib/tiers";
 import { ADMIN_EVENT_TIER } from "@/lib/admin";
+import { EventBannerUpload } from "@/components/EventBannerUpload";
 import type { Event } from "@/types/database";
 
 interface EventFormProps {
@@ -40,6 +41,7 @@ export function EventForm({
   const [country, setCountry] = useState(event?.country || "US");
   const [mainAddress, setMainAddress] = useState(event?.main_address || "");
   const [status, setStatus] = useState(event?.status || "draft");
+  const [bannerImageUrl, setBannerImageUrl] = useState(event?.banner_image_url || "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -107,6 +109,7 @@ export function EventForm({
         max_homes: tierConfig?.maxHomes || 5,
         is_featured: isEditing ? event!.is_featured : Boolean(tierConfig?.includesFeatured),
         payment_status: isEditing ? event!.payment_status : "paid",
+        banner_image_url: bannerImageUrl || null,
       };
 
       if (isEditing) {
@@ -259,6 +262,21 @@ export function EventForm({
             className="mt-1 w-full rounded-xl border border-teal-100 px-4 py-3 focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20"
           />
         </div>
+        {isEditing && event && (
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-charcoal">Banner Image</label>
+            <p className="mt-1 text-xs text-charcoal/50">
+              Shown on your public event page hero. Recommended wide photo, under 8MB.
+            </p>
+            <div className="mt-3">
+              <EventBannerUpload
+                eventId={event.id}
+                currentUrl={bannerImageUrl}
+                onUploaded={setBannerImageUrl}
+              />
+            </div>
+          </div>
+        )}
         {isEditing && (
           <div>
             <label className="block text-sm font-medium text-charcoal">Status</label>

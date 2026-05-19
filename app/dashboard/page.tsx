@@ -30,6 +30,8 @@ export default async function DashboardPage() {
     .is("event_id", null);
 
   const homeCounts: Record<string, number> = {};
+  let pendingReview = 0;
+
   if (events?.length) {
     for (const event of events) {
       const { count } = await supabase
@@ -38,6 +40,15 @@ export default async function DashboardPage() {
         .eq("event_id", event.id);
       homeCounts[event.id] = count || 0;
     }
+
+    const eventIds = events.map((event) => event.id);
+    const { count } = await supabase
+      .from("homes")
+      .select("*", { count: "exact", head: true })
+      .in("event_id", eventIds)
+      .eq("approval_status", "submitted");
+
+    pendingReview = count || 0;
   }
 
   return (
@@ -57,6 +68,17 @@ export default async function DashboardPage() {
           New Event
         </Link>
       </div>
+
+      {pendingReview > 0 && (
+        <div className="mt-6 rounded-xl border border-yellow/50 bg-yellow/20 p-4">
+          <p className="font-medium text-charcoal">
+            {pendingReview} listing{pendingReview > 1 ? "s" : ""} waiting for your review.
+          </p>
+          <p className="mt-1 text-sm text-charcoal/70">
+            Open an event&apos;s Manage Homes page to approve or request changes.
+          </p>
+        </div>
+      )}
 
       {unpaidPayments && unpaidPayments.length > 0 && (
         <div className="mt-6 rounded-xl border border-leaf/30 bg-leaf/10 p-4">

@@ -60,15 +60,27 @@ export function PublicEventPage({ event, isSample = false }: PublicEventPageProp
       )}
 
       <section
-        className={`px-4 py-12 ${
-          showFeatured
-            ? "bg-gradient-to-br from-teal to-teal/80 text-white"
-            : showPriorityStyling
-              ? "bg-gradient-to-br from-yellow/40 via-teal to-teal/90 text-white"
-              : "bg-teal text-white"
+        className={`relative overflow-hidden px-4 py-12 ${
+          event.banner_image_url
+            ? "text-white"
+            : showFeatured
+              ? "bg-gradient-to-br from-teal to-teal/80 text-white"
+              : showPriorityStyling
+                ? "bg-gradient-to-br from-yellow/40 via-teal to-teal/90 text-white"
+                : "bg-teal text-white"
         }`}
       >
-        <div className="mx-auto max-w-4xl text-center">
+        {event.banner_image_url && (
+          <>
+            <img
+              src={event.banner_image_url}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-charcoal/50" />
+          </>
+        )}
+        <div className="relative mx-auto max-w-4xl text-center">
           {showFeatured && (
             <span className="mb-3 inline-flex items-center gap-1 rounded-full bg-yellow px-3 py-1 text-xs font-bold text-charcoal">
               <Sparkles className="h-3.5 w-3.5" /> Featured Event

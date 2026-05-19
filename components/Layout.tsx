@@ -7,6 +7,12 @@ export function Header() {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
         <Logo size="sm" />
         <nav className="hidden items-center gap-6 text-sm font-medium text-charcoal/80 md:flex">
+          <Link href="/search" className="hover:text-teal">
+            Find Sales
+          </Link>
+          <Link href="/ohio" className="hover:text-teal">
+            Browse
+          </Link>
           <Link href="/pricing" className="hover:text-teal">
             Pricing
           </Link>
@@ -48,6 +54,12 @@ export function Footer() {
             </p>
           </div>
           <div className="flex flex-wrap gap-4 text-sm">
+            <Link href="/search" className="hover:underline">
+              Find Sales
+            </Link>
+            <Link href="/ohio" className="hover:underline">
+              Browse by State
+            </Link>
             <Link href="/pricing" className="hover:underline">
               Pricing
             </Link>
