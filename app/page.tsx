@@ -1,18 +1,14 @@
 import Link from "next/link";
 import { Header, Footer } from "@/components/Layout";
 import { DiscoverySearchForm } from "@/components/DiscoverySearchForm";
+import { BrowseByState } from "@/components/BrowseByState";
 import { PublicDiscoveryEventCard } from "@/components/PublicDiscoveryEventCard";
 import {
   getFeaturedEvents,
   getUpcomingEvents,
   getWeekendEvents,
 } from "@/lib/discovery";
-import {
-  DISCOVERY_CATEGORIES,
-  FEATURED_STATES,
-  SEO_CITIES,
-  getLocationHref,
-} from "@/lib/locations";
+import { DISCOVERY_CATEGORIES } from "@/lib/locations";
 import { ArrowRight, MapPin, Search, Sparkles } from "lucide-react";
 
 export default async function HomePage() {
@@ -124,36 +120,14 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="px-4 py-14">
+        <section id="browse-state" className="px-4 py-14">
           <div className="mx-auto max-w-6xl">
             <h2 className="text-2xl font-bold text-charcoal">Browse By State</h2>
             <p className="mt-1 text-sm text-charcoal/60">
-              Start with popular states, then drill into local city pages.
+              Choose any state to see popular cities and browse garage sales nearby.
             </p>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {FEATURED_STATES.map((state) => (
-                <Link
-                  key={state.slug}
-                  href={getLocationHref(state)}
-                  className="rounded-2xl border border-teal-100 bg-white px-5 py-4 font-medium text-charcoal transition hover:border-teal hover:bg-teal/5"
-                >
-                  {state.name}
-                </Link>
-              ))}
-            </div>
-            <div className="mt-8">
-              <h3 className="text-lg font-bold text-charcoal">Popular Cities</h3>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {SEO_CITIES.map((city) => (
-                  <Link
-                    key={city.slug}
-                    href={getLocationHref(city)}
-                    className="rounded-full border border-teal-200 bg-white px-4 py-2 text-sm font-medium text-teal hover:bg-teal/5"
-                  >
-                    {city.name}
-                  </Link>
-                ))}
-              </div>
+            <div className="mt-6 max-w-2xl">
+              <BrowseByState />
             </div>
           </div>
         </section>

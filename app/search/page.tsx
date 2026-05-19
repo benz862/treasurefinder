@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Header, Footer } from "@/components/Layout";
 import { DiscoverySearchForm } from "@/components/DiscoverySearchForm";
+import { BrowseByState } from "@/components/BrowseByState";
 import { SearchResults } from "@/components/SearchResults";
 import { geocodeAddress } from "@/lib/maps";
 import {
@@ -9,7 +10,7 @@ import {
   searchPublishedEvents,
   type DiscoveryFilters,
 } from "@/lib/discovery";
-import { DISCOVERY_CATEGORIES, FEATURED_STATES } from "@/lib/locations";
+import { DISCOVERY_CATEGORIES, normalizeRegionInput } from "@/lib/locations";
 
 interface PageProps {
   searchParams: Promise<{
@@ -113,16 +114,8 @@ export default async function SearchPage({ searchParams }: PageProps) {
               ))}
             </div>
             <h2 className="mt-8 text-xl font-bold text-charcoal">Browse by State</h2>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {FEATURED_STATES.map((state) => (
-                <Link
-                  key={state.slug}
-                  href={`/${state.slug}`}
-                  className="rounded-full border border-teal-200 bg-white px-4 py-2 text-sm font-medium text-teal hover:bg-teal/5"
-                >
-                  {state.name}
-                </Link>
-              ))}
+            <div className="mt-4 max-w-2xl">
+              <BrowseByState defaultRegion={normalizeRegionInput(region)} />
             </div>
           </div>
         </section>

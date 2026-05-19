@@ -5,7 +5,14 @@ import { Header, Footer } from "@/components/Layout";
 import { DiscoverySearchForm } from "@/components/DiscoverySearchForm";
 import { PublicDiscoveryEventCard } from "@/components/PublicDiscoveryEventCard";
 import { searchPublishedEvents } from "@/lib/discovery";
-import { resolveLocationSlug, type LocationPage } from "@/lib/locations";
+import {
+  getCityHref,
+  getPopularCitiesForRegion,
+  getStateByRegion,
+  getStateHref,
+  resolveLocationSlug,
+  type LocationPage,
+} from "@/lib/locations";
 
 interface PageProps {
   params: Promise<{ location: string }>;
@@ -55,6 +62,10 @@ export default async function LocationPage({ params }: PageProps) {
 
   const events = await searchPublishedEvents(filters);
   const copy = getLocationCopy(location);
+  const stateRegion =
+    location.type === "state" ? location.region : location.region;
+  const stateInfo = getStateByRegion(stateRegion);
+  const popularCities = getPopularCitiesForRegion(stateRegion);
 
   return (
     <>
@@ -103,6 +114,35 @@ export default async function LocationPage({ params }: PageProps) {
             )}
           </div>
         </section>
+
+        {stateInfo && popularCities.length > 0 && (
+          <section className="border-t border-teal-100 bg-white px-4 py-10">
+            <div className="mx-auto max-w-6xl">
+              <h2 className="text-xl font-bold text-charcoal">
+                Popular cities in {stateInfo.name}
+              </h2>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {popularCities.map((city) => (
+                  <Link
+                    key={`${stateRegion}-${city.city}`}
+                    href={getCityHref(city, stateRegion)}
+                    className="rounded-full border border-teal-200 bg-cream px-4 py-2 text-sm font-medium text-teal hover:bg-teal/5"
+                  >
+                    {city.city}
+                  </Link>
+                ))}
+              </div>
+              {location.type === "city" && (
+                <Link
+                  href={getStateHref(stateRegion)}
+                  className="mt-4 inline-block text-sm font-medium text-teal hover:underline"
+                >
+                  View all sales in {stateInfo.name}
+                </Link>
+              )}
+            </div>
+          </section>
+        )}
 
         <section className="border-t border-teal-100 bg-teal px-4 py-12 text-white">
           <div className="mx-auto max-w-3xl text-center">

@@ -10,7 +10,7 @@ export function Header() {
           <Link href="/search" className="hover:text-teal">
             Find Sales
           </Link>
-          <Link href="/ohio" className="hover:text-teal">
+          <Link href="/#browse-state" className="hover:text-teal">
             Browse
           </Link>
           <Link href="/pricing" className="hover:text-teal">
@@ -57,7 +57,7 @@ export function Footer() {
             <Link href="/search" className="hover:underline">
               Find Sales
             </Link>
-            <Link href="/ohio" className="hover:underline">
+            <Link href="/#browse-state" className="hover:underline">
               Browse by State
             </Link>
             <Link href="/pricing" className="hover:underline">
