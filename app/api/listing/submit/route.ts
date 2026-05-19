@@ -1,9 +1,19 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createPublicClient } from "@/lib/supabase/public";
 import {
   canHomeownerEditListing,
   getActiveListingByToken,
 } from "@/lib/server/organizer";
+
+function mapRpcError(message: string) {
+  if (message.includes("listing_not_editable")) {
+    return "This listing has already been submitted.";
+  }
+  if (message.includes("address_required")) {
+    return "Please add your address before submitting.";
+  }
+  return message;
+}
 
 export async function POST(request: Request) {
   const { token } = await request.json();
@@ -28,20 +38,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Please add your address before submitting." }, { status: 400 });
   }
 
-  const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("homes")
-    .update({
-      approval_status: "submitted",
-      submitted_at: new Date().toISOString(),
-      last_edited_at: new Date().toISOString(),
-    })
-    .eq("id", listing.id)
-    .select("*")
-    .single();
+  const supabase = createPublicClient();
+  const { data, error } = await supabase.rpc("submit_listing_by_invite_token", {
+    p_token: token,
+  });
 
-  if (error || !data) {
-    return NextResponse.json({ error: error?.message || "Failed to submit listing" }, { status: 500 });
+  if (error) {
+    return NextResponse.json({ error: mapRpcError(error.message) }, { status: 400 });
+  }
+
+  if (!data) {
+    return NextResponse.json({ error: "Invite link not found or expired" }, { status: 404 });
   }
 
   return NextResponse.json({ listing: data });

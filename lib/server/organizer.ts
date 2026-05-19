@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createPublicClient } from "@/lib/supabase/public";
 import { isPlatformAdmin } from "@/lib/admin";
 import type { ApprovalStatus, Home, HomePhoto } from "@/types/database";
 
@@ -47,16 +47,13 @@ export async function assertEventOwner(
 }
 
 export async function getActiveListingByToken(token: string) {
-  const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("homes")
-    .select("*, events(id, title, tier, event_date, event_end_date, status), home_photos(*)")
-    .eq("invite_token", token)
-    .eq("invite_status", "active")
-    .single();
+  const supabase = createPublicClient();
+  const { data, error } = await supabase.rpc("get_listing_by_invite_token", {
+    p_token: token,
+  });
 
   if (error || !data) return null;
-  return data;
+  return data as ListingWithEvent;
 }
 
 export function canHomeownerEditListing(approvalStatus: ApprovalStatus) {
