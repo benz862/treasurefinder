@@ -30,6 +30,7 @@ async function getEvent(slug: string): Promise<EventWithHomes | null> {
     .from("homes")
     .select("*, home_photos(*)")
     .eq("event_id", event.id)
+    .eq("approval_status", "approved")
     .order("sort_order");
 
   return { ...event, homes: homes || [] } as EventWithHomes;

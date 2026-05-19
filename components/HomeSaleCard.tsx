@@ -82,16 +82,18 @@ export function HomeSaleCard({ home, onSelect, selected }: HomeSaleCardProps) {
         </div>
       )}
 
-      <a
-        href={getDirectionsUrl(home.address)}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={(e) => e.stopPropagation()}
-        className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-teal px-4 py-2 text-sm font-medium text-white hover:bg-teal/90"
-      >
-        Get Directions
-        <ExternalLink className="h-3.5 w-3.5" />
-      </a>
+      {home.address && (
+        <a
+          href={getDirectionsUrl(home.address)}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-teal px-4 py-2 text-sm font-medium text-white hover:bg-teal/90"
+        >
+          Get Directions
+          <ExternalLink className="h-3.5 w-3.5" />
+        </a>
+      )}
     </article>
   );
 }

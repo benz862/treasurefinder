@@ -31,13 +31,13 @@ export function PublicEventPage({ event, isSample = false }: PublicEventPageProp
   const mapPins = useMemo(
     () =>
       filteredHomes
-        .filter((h) => h.latitude != null && h.longitude != null)
+        .filter((h) => h.latitude != null && h.longitude != null && h.address)
         .map((h) => ({
           id: h.id,
           lat: Number(h.latitude),
           lng: Number(h.longitude),
           title: h.seller_name || "Garage Sale",
-          address: h.address,
+          address: h.address!,
         })),
     [filteredHomes]
   );

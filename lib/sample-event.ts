@@ -1,5 +1,17 @@
 import type { EventWithHomes } from "@/types/database";
 
+const sampleInviteFields = {
+  invite_token: null,
+  invite_status: "active" as const,
+  approval_status: "approved" as const,
+  seller_email: null,
+  seller_phone: null,
+  submitted_at: null,
+  approved_at: new Date().toISOString(),
+  approved_by: null,
+  last_edited_at: null,
+};
+
 export const SAMPLE_EVENT: EventWithHomes = {
   id: "sample",
   organizer_id: "sample",
@@ -40,6 +52,7 @@ export const SAMPLE_EVENT: EventWithHomes = {
       closing_time: "14:00:00",
       notes: "Cash preferred. Early birds welcome!",
       sort_order: 0,
+      ...sampleInviteFields,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       home_photos: [],
@@ -58,6 +71,7 @@ export const SAMPLE_EVENT: EventWithHomes = {
       closing_time: "15:00:00",
       notes: null,
       sort_order: 1,
+      ...sampleInviteFields,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       home_photos: [],
@@ -76,6 +90,7 @@ export const SAMPLE_EVENT: EventWithHomes = {
       closing_time: "13:00:00",
       notes: "Multi-family sale with the Garcias next door!",
       sort_order: 2,
+      ...sampleInviteFields,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       home_photos: [],
@@ -94,6 +109,7 @@ export const SAMPLE_EVENT: EventWithHomes = {
       closing_time: "15:00:00",
       notes: "Estate sale — everything must go!",
       sort_order: 3,
+      ...sampleInviteFields,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       home_photos: [],
@@ -112,6 +128,7 @@ export const SAMPLE_EVENT: EventWithHomes = {
       closing_time: "12:00:00",
       notes: "Free items on the curb — first come first served!",
       sort_order: 4,
+      ...sampleInviteFields,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       home_photos: [],

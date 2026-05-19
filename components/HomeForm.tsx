@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { CATEGORIES } from "@/lib/categories";
 import { PhotoUploader } from "./PhotoUploader";
 import { getTier, type TierId } from "@/lib/tiers";
+import { generateInviteToken } from "@/lib/invite";
 import type { Home, HomePhoto } from "@/types/database";
 import { Trash2 } from "lucide-react";
 
@@ -83,11 +84,21 @@ export function HomeForm({ eventId, tier, home, onSaved, onCancel }: HomeFormPro
       if (isEditing) {
         const { error: updateError } = await supabase
           .from("homes")
-          .update(payload)
+          .update({
+            ...payload,
+            approval_status: "approved",
+            approved_at: new Date().toISOString(),
+          })
           .eq("id", home!.id);
         if (updateError) throw updateError;
       } else {
-        const { error: insertError } = await supabase.from("homes").insert(payload);
+        const { error: insertError } = await supabase.from("homes").insert({
+          ...payload,
+          invite_token: generateInviteToken(),
+          invite_status: "active",
+          approval_status: "approved",
+          approved_at: new Date().toISOString(),
+        });
         if (insertError) throw insertError;
       }
 

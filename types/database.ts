@@ -36,11 +36,19 @@ export type Event = {
   updated_at: string;
 };
 
+export type InviteStatus = "active" | "inactive";
+export type ApprovalStatus =
+  | "draft"
+  | "submitted"
+  | "approved"
+  | "needs_changes"
+  | "hidden";
+
 export type Home = {
   id: string;
   event_id: string;
   seller_name: string | null;
-  address: string;
+  address: string | null;
   latitude: number | null;
   longitude: number | null;
   description: string | null;
@@ -50,6 +58,15 @@ export type Home = {
   closing_time: string | null;
   notes: string | null;
   sort_order: number;
+  invite_token: string | null;
+  invite_status: InviteStatus;
+  approval_status: ApprovalStatus;
+  seller_email: string | null;
+  seller_phone: string | null;
+  submitted_at: string | null;
+  approved_at: string | null;
+  approved_by: string | null;
+  last_edited_at: string | null;
   created_at: string;
   updated_at: string;
 };
