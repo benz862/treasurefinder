@@ -117,15 +117,15 @@ export function MapView({
     if (!loaded || !mapRef.current || !mapsApiReady()) return;
 
     try {
-      const defaultCenter = center ||
-        (pins.length > 0
+      const defaultCenter =
+        pins.length > 0
           ? { lat: pins[0].lat, lng: pins[0].lng }
-          : { lat: 40.7128, lng: -74.006 });
+          : center || { lat: 39.8283, lng: -98.5795 };
 
       if (!googleMapRef.current) {
         googleMapRef.current = new google.maps.Map(mapRef.current, {
           center: defaultCenter,
-          zoom: 14,
+          zoom: pins.length === 0 && !center ? 4 : 14,
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: true,
@@ -163,7 +163,11 @@ export function MapView({
       if (pins.length > 1) {
         googleMapRef.current.fitBounds(bounds, 48);
       } else if (pins.length === 1) {
+        googleMapRef.current.setCenter({ lat: pins[0].lat, lng: pins[0].lng });
         googleMapRef.current.setZoom(15);
+      } else if (center) {
+        googleMapRef.current.setCenter(center);
+        googleMapRef.current.setZoom(14);
       }
     } catch {
       setError(

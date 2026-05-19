@@ -74,10 +74,10 @@ export function EventBannerUpload({
         <img
           src={previewUrl}
           alt="Event banner preview"
-          className="h-40 w-full rounded-2xl object-cover"
+          className="aspect-video w-full rounded-2xl object-cover object-center"
         />
       ) : (
-        <div className="flex h-40 items-center justify-center rounded-2xl border border-dashed border-teal-200 bg-teal/5 text-sm text-charcoal/60">
+        <div className="flex aspect-video items-center justify-center rounded-2xl border border-dashed border-teal-200 bg-teal/5 text-sm text-charcoal/60">
           No banner uploaded yet
         </div>
       )}

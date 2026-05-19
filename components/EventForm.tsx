@@ -40,6 +40,7 @@ export function EventForm({
   const [region, setRegion] = useState(event?.region || "");
   const [country, setCountry] = useState(event?.country || "US");
   const [mainAddress, setMainAddress] = useState(event?.main_address || "");
+  const [postalCode, setPostalCode] = useState("");
   const [status, setStatus] = useState(event?.status || "draft");
   const [bannerImageUrl, setBannerImageUrl] = useState(event?.banner_image_url || "");
   const [loading, setLoading] = useState(false);
@@ -79,7 +80,13 @@ export function EventForm({
       const geoRes = await fetch("/api/geocode", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address: mainAddress }),
+        body: JSON.stringify({
+          address: mainAddress,
+          city,
+          region,
+          zip: postalCode || undefined,
+          country,
+        }),
       });
       const geo = await geoRes.json();
 
@@ -249,7 +256,20 @@ export function EventForm({
             required
             value={mainAddress}
             onChange={(e) => setMainAddress(e.target.value)}
-            placeholder="123 Main St, City, State ZIP"
+            placeholder="5698 Lamplighter Dr"
+            className="mt-1 w-full rounded-xl border border-teal-100 px-4 py-3 focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20"
+          />
+          <p className="mt-1 text-xs text-charcoal/50">
+            Street address only is fine — city and state above are used to pin the map correctly.
+          </p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-charcoal">ZIP / Postal Code</label>
+          <input
+            type="text"
+            value={postalCode}
+            onChange={(e) => setPostalCode(e.target.value)}
+            placeholder="44420"
             className="mt-1 w-full rounded-xl border border-teal-100 px-4 py-3 focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20"
           />
         </div>
@@ -266,7 +286,7 @@ export function EventForm({
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-charcoal">Banner Image</label>
             <p className="mt-1 text-xs text-charcoal/50">
-              Shown on your public event page hero. Recommended wide photo, under 8MB.
+              Shown on your public event page hero at 16:9 (recommended 1920×1080 px, under 8MB).
             </p>
             <div className="mt-3">
               <EventBannerUpload

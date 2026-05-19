@@ -15,7 +15,15 @@ export default function ManageHomesPage() {
   const params = useParams();
   const eventId = params.id as string;
 
-  const [event, setEvent] = useState<{ id: string; title: string; tier: string; max_homes: number } | null>(null);
+  const [event, setEvent] = useState<{
+    id: string;
+    title: string;
+    tier: string;
+    max_homes: number;
+    city: string;
+    region: string;
+    country: string;
+  } | null>(null);
   const [homes, setHomes] = useState<Home[]>([]);
   const [userEmail, setUserEmail] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -35,7 +43,7 @@ export default function ManageHomesPage() {
 
     const { data: eventData } = await supabase
       .from("events")
-      .select("id, title, tier, max_homes")
+      .select("id, title, tier, max_homes, city, region, country")
       .eq("id", eventId)
       .single();
 
@@ -265,6 +273,9 @@ export default function ManageHomesPage() {
           <HomeForm
             eventId={eventId}
             tier={event.tier}
+            eventCity={event.city}
+            eventRegion={event.region}
+            eventCountry={event.country}
             home={editingHome || undefined}
             onSaved={handleSaved}
             onCancel={() => {

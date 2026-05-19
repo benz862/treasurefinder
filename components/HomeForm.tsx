@@ -13,12 +13,24 @@ import { Trash2 } from "lucide-react";
 interface HomeFormProps {
   eventId: string;
   tier: string;
+  eventCity?: string;
+  eventRegion?: string;
+  eventCountry?: string;
   home?: Home & { home_photos?: HomePhoto[] };
   onSaved?: () => void;
   onCancel?: () => void;
 }
 
-export function HomeForm({ eventId, tier, home, onSaved, onCancel }: HomeFormProps) {
+export function HomeForm({
+  eventId,
+  tier,
+  eventCity,
+  eventRegion,
+  eventCountry = "US",
+  home,
+  onSaved,
+  onCancel,
+}: HomeFormProps) {
   const router = useRouter();
   const tierConfig = getTier(tier as TierId);
   const maxPhotos = tierConfig?.maxPhotosPerHome || 3;
@@ -59,7 +71,12 @@ export function HomeForm({ eventId, tier, home, onSaved, onCancel }: HomeFormPro
       const geoRes = await fetch("/api/geocode", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address }),
+        body: JSON.stringify({
+          address,
+          city: eventCity,
+          region: eventRegion,
+          country: eventCountry,
+        }),
       });
       const geo = await geoRes.json();
 

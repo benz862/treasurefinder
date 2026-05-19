@@ -48,6 +48,55 @@ export function PublicEventPage({ event, isSample = false }: PublicEventPageProp
   const showFeatured = event.is_featured || tier?.includesFeatured;
   const showPriorityStyling = tier?.includesPriorityStyling;
 
+  const mapCenter =
+    mapPins.length === 0 && event.latitude && event.longitude
+      ? { lat: Number(event.latitude), lng: Number(event.longitude) }
+      : undefined;
+
+  const heroContent = (
+    <>
+      {showFeatured && (
+        <span className="mb-3 inline-flex items-center gap-1 rounded-full bg-yellow px-3 py-1 text-xs font-bold text-charcoal">
+          <Sparkles className="h-3.5 w-3.5" /> Featured Event
+        </span>
+      )}
+      {showPriorityStyling && !showFeatured && (
+        <span className="mb-3 inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-xs font-bold text-white">
+          Neighborhood Event
+        </span>
+      )}
+      <h1 className="text-3xl font-bold md:text-4xl">{event.title}</h1>
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm text-white/90">
+        <span className="flex items-center gap-1">
+          <Calendar className="h-4 w-4" />
+          {formatEventDateRange(event.event_date, event.event_end_date)}
+        </span>
+        <span className="flex items-center gap-1">
+          <Clock className="h-4 w-4" />
+          {formatTime(event.start_time)} – {formatTime(event.end_time)}
+        </span>
+        <span className="flex items-center gap-1">
+          <MapPin className="h-4 w-4" />
+          {event.city}, {event.region}
+        </span>
+      </div>
+      {event.description && (
+        <p className="mx-auto mt-6 max-w-2xl text-white/90">{event.description}</p>
+      )}
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+        <ShareButton url={eventUrl} title={event.title} />
+        {showFlyer && (
+          <Link
+            href={`/event/${event.slug}/flyer`}
+            className="rounded-full border border-white/40 px-4 py-2 text-sm font-medium hover:bg-white/10"
+          >
+            Printable Flyer
+          </Link>
+        )}
+      </div>
+    </>
+  );
+
   return (
     <div className="min-h-screen bg-cream">
       {isSample && (
@@ -59,69 +108,33 @@ export function PublicEventPage({ event, isSample = false }: PublicEventPageProp
         </div>
       )}
 
-      <section
-        className={`relative overflow-hidden px-4 py-12 ${
-          event.banner_image_url
-            ? "text-white"
-            : showFeatured
+      {event.banner_image_url ? (
+        <section className="relative text-white">
+          <div className="relative aspect-[16/9] max-h-[min(56vw,520px)] w-full overflow-hidden bg-teal">
+            <img
+              src={event.banner_image_url}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover object-center"
+            />
+            <div className="absolute inset-0 bg-charcoal/50" />
+            <div className="relative flex h-full flex-col items-center justify-center px-4 py-8 text-center">
+              {heroContent}
+            </div>
+          </div>
+        </section>
+      ) : (
+        <section
+          className={`px-4 py-12 ${
+            showFeatured
               ? "bg-gradient-to-br from-teal to-teal/80 text-white"
               : showPriorityStyling
                 ? "bg-gradient-to-br from-yellow/40 via-teal to-teal/90 text-white"
                 : "bg-teal text-white"
-        }`}
-      >
-        {event.banner_image_url && (
-          <>
-            <img
-              src={event.banner_image_url}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-charcoal/50" />
-          </>
-        )}
-        <div className="relative mx-auto max-w-4xl text-center">
-          {showFeatured && (
-            <span className="mb-3 inline-flex items-center gap-1 rounded-full bg-yellow px-3 py-1 text-xs font-bold text-charcoal">
-              <Sparkles className="h-3.5 w-3.5" /> Featured Event
-            </span>
-          )}
-          {showPriorityStyling && !showFeatured && (
-            <span className="mb-3 inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-xs font-bold text-white">
-              Neighborhood Event
-            </span>
-          )}
-          <h1 className="text-3xl font-bold md:text-4xl">{event.title}</h1>
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm text-white/90">
-            <span className="flex items-center gap-1">
-              <Calendar className="h-4 w-4" />
-              {formatEventDateRange(event.event_date, event.event_end_date)}
-            </span>
-            <span className="flex items-center gap-1">
-              <Clock className="h-4 w-4" />
-              {formatTime(event.start_time)} – {formatTime(event.end_time)}
-            </span>
-            <span className="flex items-center gap-1">
-              <MapPin className="h-4 w-4" />
-              {event.city}, {event.region}
-            </span>
-          </div>
-          {event.description && (
-            <p className="mx-auto mt-6 max-w-2xl text-white/90">{event.description}</p>
-          )}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <ShareButton url={eventUrl} title={event.title} />
-            {showFlyer && (
-              <Link
-                href={`/event/${event.slug}/flyer`}
-                className="rounded-full border border-white/40 px-4 py-2 text-sm font-medium hover:bg-white/10"
-              >
-                Printable Flyer
-              </Link>
-            )}
-          </div>
-        </div>
-      </section>
+          }`}
+        >
+          <div className="mx-auto max-w-4xl text-center">{heroContent}</div>
+        </section>
+      )}
 
       <div className="mx-auto max-w-6xl px-4 py-8">
         <div className="mb-6">
@@ -133,11 +146,7 @@ export function PublicEventPage({ event, isSample = false }: PublicEventPageProp
 
         <MapView
           pins={mapPins}
-          center={
-            event.latitude && event.longitude
-              ? { lat: Number(event.latitude), lng: Number(event.longitude) }
-              : undefined
-          }
+          center={mapCenter}
           onPinClick={setSelectedHomeId}
           selectedPinId={selectedHomeId}
           className="h-[350px] w-full rounded-2xl md:h-[450px]"

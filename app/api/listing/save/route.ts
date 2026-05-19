@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { createPublicClient } from "@/lib/supabase/public";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { geocodeAddress } from "@/lib/maps";
 import {
   canHomeownerEditListing,
   getActiveListingByToken,
 } from "@/lib/server/organizer";
-import { getSiteUrl } from "@/lib/utils";
 
 function mapRpcError(message: string) {
   if (message.includes("listing_not_editable")) {
@@ -42,14 +43,22 @@ export async function POST(request: Request) {
   let longitude = listing.longitude;
 
   try {
-    const geoRes = await fetch(`${getSiteUrl()}/api/geocode`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ address }),
+    const admin = createAdminClient();
+    const { data: eventMeta } = await admin
+      .from("events")
+      .select("city, region, country")
+      .eq("id", listing.event_id)
+      .single();
+
+    const geo = await geocodeAddress({
+      address,
+      city: eventMeta?.city,
+      region: eventMeta?.region,
+      country: eventMeta?.country || "US",
     });
-    const geo = await geoRes.json();
-    latitude = geo.latitude ?? latitude;
-    longitude = geo.longitude ?? longitude;
+
+    latitude = geo?.latitude ?? latitude;
+    longitude = geo?.longitude ?? longitude;
   } catch {
     // Geocoding is best-effort for drafts.
   }
