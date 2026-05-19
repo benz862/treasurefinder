@@ -11,6 +11,12 @@ interface MapViewProps {
   className?: string;
 }
 
+declare global {
+  interface Window {
+    gm_authFailure?: () => void;
+  }
+}
+
 export function MapView({
   pins,
   center,
@@ -27,21 +33,39 @@ export function MapView({
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
-      setError("Google Maps API key not configured");
+      setError("Google Maps API key not configured.");
       return;
     }
+
+    window.gm_authFailure = () => {
+      setError(
+        "Google Maps could not authenticate this site. Enable billing in Google Cloud and check your API key restrictions for treasurefinder.app."
+      );
+    };
 
     if (window.google?.maps) {
       setLoaded(true);
       return;
     }
 
+    const existing = document.querySelector('script[data-treasurefinder-maps="true"]');
+    if (existing) {
+      existing.addEventListener("load", () => setLoaded(true));
+      existing.addEventListener("error", () => setError("Failed to load Google Maps."));
+      return;
+    }
+
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async`;
     script.async = true;
+    script.dataset.treasurefinderMaps = "true";
     script.onload = () => setLoaded(true);
-    script.onerror = () => setError("Failed to load Google Maps");
+    script.onerror = () => setError("Failed to load Google Maps.");
     document.head.appendChild(script);
+
+    return () => {
+      delete window.gm_authFailure;
+    };
   }, []);
 
   useEffect(() => {
@@ -59,9 +83,7 @@ export function MapView({
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: true,
-        styles: [
-          { featureType: "poi", stylers: [{ visibility: "off" }] },
-        ],
+        styles: [{ featureType: "poi", stylers: [{ visibility: "off" }] }],
       });
     } else {
       googleMapRef.current.setCenter(defaultCenter);
@@ -118,13 +140,13 @@ export function MapView({
   }
 
   return (
-    <div className={className}>
+    <div className={`relative ${className}`}>
       {!loaded && (
-        <div className="flex h-full items-center justify-center rounded-2xl bg-teal/5">
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-teal/5">
           <p className="text-sm text-charcoal/60">Loading map...</p>
         </div>
       )}
-      <div ref={mapRef} className={`h-full w-full rounded-2xl ${!loaded ? "hidden" : ""}`} />
+      <div ref={mapRef} className="h-full w-full rounded-2xl" />
     </div>
   );
 }
