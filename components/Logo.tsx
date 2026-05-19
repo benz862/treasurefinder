@@ -2,34 +2,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-const variants = {
-  full: {
-    src: "/logo.png",
-    width: 2041,
-    height: 1275,
-    sm: "h-10 w-auto",
-    md: "h-14 w-auto",
-    lg: "h-32 w-auto sm:h-40",
-  },
-  compact: {
-    src: "/logo-header.png",
-    width: 2250,
-    height: 1500,
-    sm: "h-11 w-auto max-w-[220px]",
-    md: "h-16 w-auto max-w-[280px]",
-    lg: "h-28 w-auto max-w-[420px] sm:h-36",
-  },
-} as const;
-
 const sizeClasses = {
-  sm: "sm",
-  md: "md",
-  lg: "lg",
+  sm: "h-11 w-auto max-w-[180px] sm:max-w-[220px]",
+  md: "h-16 w-auto max-w-[260px] sm:max-w-[320px]",
+  lg: "h-36 w-auto max-w-[min(100%,520px)] sm:h-44",
 } as const;
 
 interface LogoProps {
   size?: keyof typeof sizeClasses;
-  variant?: keyof typeof variants;
   href?: string | null;
   className?: string;
   priority?: boolean;
@@ -37,22 +17,18 @@ interface LogoProps {
 
 export function Logo({
   size = "sm",
-  variant = "compact",
   href = "/",
   className,
   priority,
 }: LogoProps) {
-  const config = variants[variant];
-  const sizeKey = sizeClasses[size];
-
   const image = (
     <Image
-      src={config.src}
+      src="/logo.png"
       alt="Treasure Finder — Find it. Love it. Take it home."
-      width={config.width}
-      height={config.height}
+      width={2041}
+      height={1275}
       priority={priority ?? size === "lg"}
-      className={cn(config[sizeKey], className)}
+      className={cn(sizeClasses[size], className)}
     />
   );
 

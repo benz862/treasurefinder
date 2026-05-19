@@ -11,7 +11,7 @@ export default function HomePage() {
         {/* Hero */}
         <section className="relative overflow-hidden bg-gradient-to-br from-yellow/40 via-cream to-teal/10 px-4 py-12 md:py-20">
           <div className="mx-auto max-w-4xl text-center">
-            <Logo size="lg" variant="full" href={null} className="mx-auto" priority />
+            <Logo size="lg" href={null} className="mx-auto" priority />
             <span className="mt-6 inline-flex items-center gap-1 rounded-full bg-teal/10 px-4 py-1.5 text-sm font-medium text-teal">
               <MapPin className="h-4 w-4" />
               Neighborhood garage sale maps made easy

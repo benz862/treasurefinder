@@ -41,7 +41,7 @@ export function Footer() {
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="inline-block rounded-2xl bg-white/95 p-3 shadow-sm">
-              <Logo size="md" variant="compact" href={null} />
+              <Logo size="md" href={null} />
             </div>
             <p className="mt-3 text-sm text-white/80">
               Turn neighborhood garage sales into organized, map-based events.
