@@ -8,8 +8,8 @@ import { searchPublishedEvents } from "@/lib/discovery";
 import {
   getCityHref,
   getPopularCitiesForRegion,
-  getStateByRegion,
-  getStateHref,
+  getBrowseRegion,
+  getRegionHref,
   resolveLocationSlug,
   type LocationPage,
 } from "@/lib/locations";
@@ -19,7 +19,7 @@ interface PageProps {
 }
 
 function getLocationCopy(location: LocationPage) {
-  if (location.type === "state") {
+  if (location.type === "state" || location.type === "province") {
     return {
       title: `Garage Sales in ${location.name}`,
       description: `Discover garage sales, yard sales, estate sales, and community events happening in ${location.name}. Browse maps, dates, and participating homes.`,
@@ -56,7 +56,7 @@ export default async function LocationPage({ params }: PageProps) {
   if (!location) notFound();
 
   const filters =
-    location.type === "state"
+    location.type === "state" || location.type === "province"
       ? { region: location.region }
       : { city: location.city, region: location.region };
 
@@ -64,7 +64,7 @@ export default async function LocationPage({ params }: PageProps) {
   const copy = getLocationCopy(location);
   const stateRegion =
     location.type === "state" ? location.region : location.region;
-  const stateInfo = getStateByRegion(stateRegion);
+  const stateInfo = getBrowseRegion(stateRegion);
   const popularCities = getPopularCitiesForRegion(stateRegion);
 
   return (
@@ -134,7 +134,7 @@ export default async function LocationPage({ params }: PageProps) {
               </div>
               {location.type === "city" && (
                 <Link
-                  href={getStateHref(stateRegion)}
+                  href={getRegionHref(stateRegion)}
                   className="mt-4 inline-block text-sm font-medium text-teal hover:underline"
                 >
                   View all sales in {stateInfo.name}

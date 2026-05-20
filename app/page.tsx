@@ -2,21 +2,27 @@ import Link from "next/link";
 import { Header, Footer } from "@/components/Layout";
 import { DiscoverySearchForm } from "@/components/DiscoverySearchForm";
 import { BrowseByState } from "@/components/BrowseByState";
+import { DiscoveryMap } from "@/components/DiscoveryMap";
 import { PublicDiscoveryEventCard } from "@/components/PublicDiscoveryEventCard";
 import {
   getFeaturedEvents,
+  getMapEvents,
   getUpcomingEvents,
   getWeekendEvents,
+  hydrateEventCoordinates,
 } from "@/lib/discovery";
 import { DISCOVERY_CATEGORIES } from "@/lib/locations";
 import { ArrowRight, MapPin, Search, Sparkles } from "lucide-react";
 
 export default async function HomePage() {
-  const [weekendEvents, featuredEvents, upcomingEvents] = await Promise.all([
+  const [weekendEvents, featuredEvents, upcomingEvents, mapEventsRaw] = await Promise.all([
     getWeekendEvents(6),
     getFeaturedEvents(6),
     getUpcomingEvents(6),
+    getMapEvents(),
   ]);
+
+  const mapEvents = await hydrateEventCoordinates(mapEventsRaw);
 
   const showcaseEvents =
     featuredEvents.length > 0
@@ -39,8 +45,9 @@ export default async function HomePage() {
               Find Garage Sales, Estate Sales &amp; Hidden Treasures Near You
             </h1>
             <p className="mx-auto mt-5 max-w-3xl text-lg text-charcoal/70">
-              Discover neighborhood sales, estate sales, community events, tools, antiques,
-              collectibles, and hidden gems happening this weekend.
+              Discover neighborhood sales, estate sales, and community events — or search for
+              specific treasures like antiques, vinyl, tools, and collectibles anywhere in the
+              country.
             </p>
             <div className="mx-auto mt-8 max-w-3xl text-left">
               <DiscoverySearchForm />
@@ -60,6 +67,18 @@ export default async function HomePage() {
                 Create Event
                 <ArrowRight className="h-5 w-5" />
               </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-y border-teal-100 bg-white px-4 py-10 md:py-12">
+          <div className="mx-auto max-w-6xl">
+            <h2 className="text-2xl font-bold text-charcoal">Garage Sales Across the Map</h2>
+            <p className="mt-1 max-w-2xl text-sm text-charcoal/60">
+              Blue dots show active sales nationwide. Zoom in, then click a dot to open that event.
+            </p>
+            <div className="mt-6">
+              <DiscoveryMap events={mapEvents} />
             </div>
           </div>
         </section>
@@ -122,9 +141,9 @@ export default async function HomePage() {
 
         <section id="browse-state" className="px-4 py-14">
           <div className="mx-auto max-w-6xl">
-            <h2 className="text-2xl font-bold text-charcoal">Browse By State</h2>
+            <h2 className="text-2xl font-bold text-charcoal">Browse By State or Province</h2>
             <p className="mt-1 text-sm text-charcoal/60">
-              Choose any state to see popular cities and browse garage sales nearby.
+              Choose any state or province to see the largest cities and browse garage sales nearby.
             </p>
             <div className="mt-6 max-w-2xl">
               <BrowseByState />

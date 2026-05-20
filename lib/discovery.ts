@@ -1,11 +1,29 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { isDemoEvent } from "@/lib/demo-events";
+import { geocodeAddress } from "@/lib/maps";
 import { regionMatches } from "@/lib/locations";
 import type { Event } from "@/types/database";
 
 export type DiscoveryEvent = Event & { homeCount: number };
 
+/** A participating home that matched an item/treasure keyword search. */
+export type ItemSearchMatch = {
+  homeId: string;
+  sellerName: string | null;
+  address: string | null;
+  matchedItems: string[];
+  snippet: string | null;
+};
+
+export type DiscoveryEventResult = DiscoveryEvent & {
+  matchingHomes?: ItemSearchMatch[];
+};
+
 export type DiscoveryFilters = {
   query?: string;
+  /** Search listings nationwide for tools, antiques, brands, etc. */
+  itemQuery?: string;
   city?: string;
   region?: string;
   zip?: string;
@@ -73,6 +91,98 @@ function haversineMiles(
   return 3958.8 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+function parseSearchTerms(text: string) {
+  return text
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+function termsMatchHaystack(terms: string[], haystack: string) {
+  return terms.length > 0 && terms.every((term) => haystack.includes(term));
+}
+
+function buildHomeSearchHaystack(home: {
+  seller_name: string | null;
+  address: string | null;
+  description: string | null;
+  notes: string | null;
+  featured_items: string[];
+  categories: string[];
+}) {
+  return [
+    home.seller_name,
+    home.address,
+    home.description,
+    home.notes,
+    ...(home.featured_items || []),
+    ...(home.categories || []),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+async function attachItemMatches(
+  events: DiscoveryEvent[],
+  itemQuery: string
+): Promise<DiscoveryEventResult[]> {
+  const terms = parseSearchTerms(itemQuery);
+  if (!terms.length) return events;
+
+  const eventIds = events.map((event) => event.id);
+  if (!eventIds.length) return [];
+
+  const supabase = await createClient();
+  const { data: homes } = await supabase
+    .from("homes")
+    .select(
+      "id, event_id, seller_name, address, description, featured_items, categories, notes"
+    )
+    .in("event_id", eventIds)
+    .eq("approval_status", "approved");
+
+  const matchesByEvent = new Map<string, ItemSearchMatch[]>();
+
+  for (const home of homes || []) {
+    const haystack = buildHomeSearchHaystack(home);
+    if (!termsMatchHaystack(terms, haystack)) continue;
+
+    const matchedItems = ((home.featured_items || []) as string[]).filter((item: string) =>
+      terms.some((term) => item.toLowerCase().includes(term))
+    );
+
+    const list = matchesByEvent.get(home.event_id) || [];
+    list.push({
+      homeId: home.id,
+      sellerName: home.seller_name,
+      address: home.address,
+      matchedItems,
+      snippet: home.description?.trim() || null,
+    });
+    matchesByEvent.set(home.event_id, list);
+  }
+
+  const results: DiscoveryEventResult[] = [];
+
+  for (const event of events) {
+    const eventHaystack = [event.title, event.description || "", event.city, event.region]
+      .join(" ")
+      .toLowerCase();
+    const homeMatches = matchesByEvent.get(event.id);
+    const eventLevelMatch = termsMatchHaystack(terms, eventHaystack);
+
+    if (homeMatches?.length) {
+      results.push({ ...event, matchingHomes: homeMatches });
+    } else if (eventLevelMatch) {
+      results.push({ ...event, matchingHomes: [] });
+    }
+  }
+
+  return results;
+}
+
 function matchesTextQuery(event: Event, query: string) {
   const haystack = [
     event.title,
@@ -127,7 +237,7 @@ async function getCategoryEventIds(category: string) {
 
 export async function searchPublishedEvents(
   filters: DiscoveryFilters = {}
-): Promise<DiscoveryEvent[]> {
+): Promise<DiscoveryEventResult[]> {
   const supabase = await createClient();
   const today = toDateString(new Date());
 
@@ -144,7 +254,7 @@ export async function searchPublishedEvents(
   const { data: events, error } = await query;
   if (error || !events?.length) return [];
 
-  let filtered = events as Event[];
+  let filtered = (events as Event[]).filter((event) => !isDemoEvent(event));
 
   if (filters.upcomingOnly !== false) {
     filtered = filtered.filter((event) => {
@@ -208,7 +318,20 @@ export async function searchPublishedEvents(
     filtered = filtered.slice(0, filters.limit);
   }
 
-  return attachHomeCounts(filtered);
+  const withCounts = await attachHomeCounts(filtered);
+
+  if (filters.itemQuery?.trim()) {
+    return attachItemMatches(withCounts, filters.itemQuery);
+  }
+
+  return withCounts;
+}
+
+/** Published events with optional item matches on participating homes (nationwide when no location set). */
+export async function searchDiscovery(
+  filters: DiscoveryFilters = {}
+): Promise<DiscoveryEventResult[]> {
+  return searchPublishedEvents(filters);
 }
 
 export async function getFeaturedEvents(limit = 6) {
@@ -222,4 +345,60 @@ export async function getWeekendEvents(limit = 6) {
 
 export async function getUpcomingEvents(limit = 6) {
   return searchPublishedEvents({ limit });
+}
+
+/** All published upcoming events for the nationwide discovery map. */
+export async function getMapEvents() {
+  return searchPublishedEvents({ upcomingOnly: true });
+}
+
+/** Fill missing coordinates so map pins can render on first paint when possible. */
+export async function hydrateEventCoordinates<T extends Event>(
+  events: T[]
+): Promise<T[]> {
+  const missing = events.filter(
+    (event) =>
+      event.main_address?.trim() &&
+      (event.latitude == null || event.longitude == null)
+  );
+
+  if (!missing.length) return events;
+
+  let admin: ReturnType<typeof createAdminClient> | null = null;
+  try {
+    admin = createAdminClient();
+  } catch {
+    admin = null;
+  }
+
+  const byId = new Map(events.map((event) => [event.id, { ...event } as T]));
+
+  for (const event of missing) {
+    const geo = await geocodeAddress({
+      address: event.main_address,
+      city: event.city,
+      region: event.region,
+      country: event.country,
+    });
+
+    if (!geo) continue;
+
+    const updated = byId.get(event.id);
+    if (!updated) continue;
+
+    updated.latitude = geo.latitude;
+    updated.longitude = geo.longitude;
+
+    if (admin) {
+      await admin
+        .from("events")
+        .update({
+          latitude: geo.latitude,
+          longitude: geo.longitude,
+        })
+        .eq("id", event.id);
+    }
+  }
+
+  return Array.from(byId.values()) as T[];
 }

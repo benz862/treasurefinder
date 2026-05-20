@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { MapView } from "./MapView";
 import { HomeSaleCard } from "./HomeSaleCard";
 import { CategoryFilter } from "./CategoryFilter";
 import { ShareButton } from "./ShareButton";
 import { QRCodeGenerator } from "./QRCodeGenerator";
 import { formatEventDateRange, formatTime, getSiteUrl } from "@/lib/utils";
+import { buildEventMapPins, EVENT_HQ_PIN_ID } from "@/lib/maps";
 import { getTier } from "@/lib/tiers";
 import type { EventWithHomes } from "@/types/database";
 import { Calendar, Clock, MapPin, Sparkles } from "lucide-react";
@@ -18,8 +19,26 @@ interface PublicEventPageProps {
 }
 
 export function PublicEventPage({ event, isSample = false }: PublicEventPageProps) {
+  const mapSectionRef = useRef<HTMLDivElement>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedHomeId, setSelectedHomeId] = useState<string | null>(null);
+
+  const focusHomeOnMap = useCallback((homeId: string) => {
+    setSelectedHomeId(homeId);
+    mapSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  const handleMapPinClick = useCallback(
+    (pinId: string) => {
+      if (pinId === EVENT_HQ_PIN_ID) {
+        setSelectedHomeId(null);
+        return;
+      }
+      focusHomeOnMap(pinId);
+      window.location.href = `/event/${event.slug}/home/${pinId}`;
+    },
+    [event.slug, focusHomeOnMap]
+  );
 
   const filteredHomes = useMemo(() => {
     if (selectedCategories.length === 0) return event.homes;
@@ -29,17 +48,40 @@ export function PublicEventPage({ event, isSample = false }: PublicEventPageProp
   }, [event.homes, selectedCategories]);
 
   const mapPins = useMemo(
+    () => buildEventMapPins({ event, homes: filteredHomes }),
+    [event, filteredHomes]
+  );
+
+  const mapCenter = useMemo(() => {
+    const hq = mapPins.find((pin) => pin.id === EVENT_HQ_PIN_ID);
+    return hq ? { lat: hq.lat, lng: hq.lng } : undefined;
+  }, [mapPins]);
+
+  const headquarters = useMemo(
+    () => ({
+      address: event.main_address,
+      city: event.city,
+      region: event.region,
+      country: event.country,
+      title: "Main event location",
+      displayAddress: event.main_address,
+    }),
+    [event.main_address, event.city, event.region, event.country]
+  );
+
+  const geocodeHomes = useMemo(
     () =>
       filteredHomes
-        .filter((h) => h.latitude != null && h.longitude != null && h.address)
-        .map((h) => ({
-          id: h.id,
-          lat: Number(h.latitude),
-          lng: Number(h.longitude),
-          title: h.seller_name || "Garage Sale",
-          address: h.address!,
+        .filter((home) => (home.latitude == null || home.longitude == null) && home.address)
+        .map((home) => ({
+          id: home.id,
+          address: home.address!,
+          city: event.city,
+          region: event.region,
+          country: event.country,
+          title: home.seller_name || "Garage Sale",
         })),
-    [filteredHomes]
+    [filteredHomes, event.city, event.region, event.country]
   );
 
   const eventUrl = `${getSiteUrl()}/event/${event.slug}`;
@@ -48,12 +90,27 @@ export function PublicEventPage({ event, isSample = false }: PublicEventPageProp
   const showFeatured = event.is_featured || tier?.includesFeatured;
   const showPriorityStyling = tier?.includesPriorityStyling;
 
-  const mapCenter =
-    mapPins.length === 0 && event.latitude && event.longitude
-      ? { lat: Number(event.latitude), lng: Number(event.longitude) }
-      : undefined;
+  const heroActions = (
+    <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+      <ShareButton url={eventUrl} title={event.title} />
+      {showFlyer && (
+        <Link
+          href={`/event/${event.slug}/flyer`}
+          className="rounded-full border border-white/50 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm hover:bg-white/20"
+        >
+          Printable Flyer
+        </Link>
+      )}
+    </div>
+  );
 
-  const heroContent = (
+  const heroDescription = event.description ? (
+    <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-white/95">
+      {event.description}
+    </p>
+  ) : null;
+
+  const heroHeader = (
     <>
       {showFeatured && (
         <span className="mb-3 inline-flex items-center gap-1 rounded-full bg-yellow px-3 py-1 text-xs font-bold text-charcoal">
@@ -65,8 +122,8 @@ export function PublicEventPage({ event, isSample = false }: PublicEventPageProp
           Neighborhood Event
         </span>
       )}
-      <h1 className="text-3xl font-bold md:text-4xl">{event.title}</h1>
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm text-white/90">
+      <h1 className="text-3xl font-bold tracking-tight md:text-4xl">{event.title}</h1>
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm font-medium text-white">
         <span className="flex items-center gap-1">
           <Calendar className="h-4 w-4" />
           {formatEventDateRange(event.event_date, event.event_end_date)}
@@ -80,22 +137,27 @@ export function PublicEventPage({ event, isSample = false }: PublicEventPageProp
           {event.city}, {event.region}
         </span>
       </div>
-      {event.description && (
-        <p className="mx-auto mt-6 max-w-2xl text-white/90">{event.description}</p>
-      )}
-      <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-        <ShareButton url={eventUrl} title={event.title} />
-        {showFlyer && (
-          <Link
-            href={`/event/${event.slug}/flyer`}
-            className="rounded-full border border-white/40 px-4 py-2 text-sm font-medium hover:bg-white/10"
-          >
-            Printable Flyer
-          </Link>
-        )}
-      </div>
     </>
   );
+
+  const heroContent = (
+    <>
+      {heroHeader}
+      {heroDescription}
+      {heroActions}
+    </>
+  );
+
+  const heroBannerContent = (
+    <>
+      {heroHeader}
+      {heroActions}
+      {heroDescription}
+    </>
+  );
+
+  const heroTextShadows =
+    "[&_h1]:drop-shadow-[0_2px_12px_rgba(0,0,0,0.85)] [&_p]:drop-shadow-[0_1px_6px_rgba(0,0,0,0.75)] [&_span]:drop-shadow-[0_1px_4px_rgba(0,0,0,0.7)]";
 
   return (
     <div className="min-h-screen bg-cream">
@@ -110,15 +172,22 @@ export function PublicEventPage({ event, isSample = false }: PublicEventPageProp
 
       {event.banner_image_url ? (
         <section className="relative text-white">
-          <div className="relative aspect-[16/9] max-h-[min(56vw,520px)] w-full overflow-hidden bg-teal">
-            <img
-              src={event.banner_image_url}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover object-center"
-            />
-            <div className="absolute inset-0 bg-charcoal/50" />
-            <div className="relative flex h-full flex-col items-center justify-center px-4 py-8 text-center">
-              {heroContent}
+          <div className="relative min-h-[min(42vw,280px)] w-full bg-charcoal">
+            <div className="absolute inset-0">
+              <img
+                src={event.banner_image_url}
+                alt=""
+                className="h-full w-full object-cover object-center"
+              />
+              <div
+                className="absolute inset-0 bg-gradient-to-b from-charcoal/15 via-transparent to-charcoal/45"
+                aria-hidden
+              />
+            </div>
+            <div className="relative z-10 px-4 py-6 pb-8 md:py-10">
+              <div className="mx-auto w-full max-w-3xl rounded-2xl border border-white/15 bg-charcoal/25 px-5 py-6 text-center shadow-lg backdrop-blur-[2px] md:px-10 md:py-8">
+                <div className={heroTextShadows}>{heroBannerContent}</div>
+              </div>
             </div>
           </div>
         </section>
@@ -137,17 +206,20 @@ export function PublicEventPage({ event, isSample = false }: PublicEventPageProp
       )}
 
       <div className="mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-6">
+        <div ref={mapSectionRef} className="mb-6 scroll-mt-24">
           <h2 className="text-xl font-bold text-charcoal">Sale Map</h2>
           <p className="text-sm text-charcoal/60">
             {filteredHomes.length} participating home{filteredHomes.length !== 1 ? "s" : ""}
+            {event.main_address ? " · yellow pin shows the main event address" : ""}
           </p>
         </div>
 
         <MapView
           pins={mapPins}
+          headquarters={headquarters}
+          geocodeHomes={geocodeHomes}
           center={mapCenter}
-          onPinClick={setSelectedHomeId}
+          onPinClick={handleMapPinClick}
           selectedPinId={selectedHomeId}
           className="h-[350px] w-full rounded-2xl md:h-[450px]"
         />
@@ -166,8 +238,9 @@ export function PublicEventPage({ event, isSample = false }: PublicEventPageProp
               <HomeSaleCard
                 key={home.id}
                 home={home}
+                eventSlug={event.slug}
                 selected={selectedHomeId === home.id}
-                onSelect={(h) => setSelectedHomeId(h.id)}
+                onSelect={(h) => focusHomeOnMap(h.id)}
               />
             ))
           )}

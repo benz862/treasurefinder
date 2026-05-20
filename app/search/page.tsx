@@ -7,6 +7,7 @@ import { SearchResults } from "@/components/SearchResults";
 import { geocodeAddress } from "@/lib/maps";
 import {
   getThisWeekendRange,
+  hydrateEventCoordinates,
   searchPublishedEvents,
   type DiscoveryFilters,
 } from "@/lib/discovery";
@@ -14,6 +15,7 @@ import { DISCOVERY_CATEGORIES, normalizeRegionInput } from "@/lib/locations";
 
 interface PageProps {
   searchParams: Promise<{
+    item?: string;
     location?: string;
     region?: string;
     category?: string;
@@ -30,6 +32,7 @@ export const metadata: Metadata = {
 
 export default async function SearchPage({ searchParams }: PageProps) {
   const params = await searchParams;
+  const item = params.item?.trim() || "";
   const location = params.location?.trim() || "";
   const region = params.region?.trim() || "";
   const category = params.category?.trim() || "";
@@ -37,6 +40,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
   const distance = params.distance || "";
 
   const filters: DiscoveryFilters = {
+    itemQuery: item || undefined,
     category: category || undefined,
     upcomingOnly: date !== "all",
   };
@@ -71,7 +75,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
     }
   }
 
-  const events = await searchPublishedEvents(filters);
+  const events = await hydrateEventCoordinates(await searchPublishedEvents(filters));
 
   return (
     <>
@@ -79,13 +83,17 @@ export default async function SearchPage({ searchParams }: PageProps) {
       <main className="min-h-screen bg-cream">
         <section className="border-b border-teal-100 bg-gradient-to-br from-yellow/30 via-cream to-teal/10 px-4 py-10">
           <div className="mx-auto max-w-6xl">
-            <h1 className="text-3xl font-bold text-charcoal">Find Sales Near You</h1>
+            <h1 className="text-3xl font-bold text-charcoal">
+              {item ? "Find Treasures Nationwide" : "Find Sales Near You"}
+            </h1>
             <p className="mt-2 max-w-2xl text-charcoal/70">
-              Search neighborhood garage sales, estate sales, and community events by location,
-              category, and date.
+              {item
+                ? `See which garage and community sales have listings matching “${item}” — anywhere in the country, or narrow by city and state.`
+                : "Search neighborhood garage sales, estate sales, and community events by what you're hunting for, location, category, and date."}
             </p>
             <div className="mt-6">
               <DiscoverySearchForm
+                initialItem={item}
                 initialLocation={location}
                 initialRegion={region}
                 initialCategory={category}
@@ -96,7 +104,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
 
         <SearchResults
           events={events}
-          initialFilters={{ location, region, category, date, distance }}
+          initialFilters={{ item, location, region, category, date, distance }}
         />
 
         <section className="border-t border-teal-100 px-4 py-12">
@@ -113,7 +121,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
                 </Link>
               ))}
             </div>
-            <h2 className="mt-8 text-xl font-bold text-charcoal">Browse by State</h2>
+            <h2 className="mt-8 text-xl font-bold text-charcoal">Browse by State or Province</h2>
             <div className="mt-4 max-w-2xl">
               <BrowseByState defaultRegion={normalizeRegionInput(region)} />
             </div>

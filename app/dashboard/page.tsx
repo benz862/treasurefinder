@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/DashboardShell";
 import { EventCard } from "@/components/EventCard";
 import { createClient } from "@/lib/supabase/server";
+import { isPlatformAdmin } from "@/lib/admin";
+import { getManagedSampleEvent } from "@/lib/server/marketing-sample";
 import { Plus } from "lucide-react";
 
 export default async function DashboardPage() {
@@ -21,6 +23,9 @@ export default async function DashboardPage() {
     .select("*")
     .eq("organizer_id", profile?.id)
     .order("created_at", { ascending: false });
+
+  const isAdmin = isPlatformAdmin({ email: user.email, role: profile?.role ?? null });
+  const marketingSample = isAdmin ? await getManagedSampleEvent() : null;
 
   const { data: unpaidPayments } = await supabase
     .from("payments")
@@ -51,8 +56,54 @@ export default async function DashboardPage() {
     pendingReview = count || 0;
   }
 
+  const ownedEventIds = new Set((events ?? []).map((event) => event.id));
+  const showSampleOnDashboard =
+    marketingSample && !ownedEventIds.has(marketingSample.id);
+
   return (
-    <DashboardShell userEmail={user.email}>
+    <DashboardShell userEmail={user.email} showAdminLink={isAdmin}>
+      {isAdmin && (
+        <section className="mb-8 rounded-2xl border border-yellow/50 bg-yellow/10 p-5">
+          <h2 className="font-bold text-charcoal">Marketing sample event</h2>
+          {marketingSample ? (
+            <>
+              <p className="mt-2 text-sm text-charcoal/70">
+                Edit the Maplewood demo shown on the homepage and &quot;Sample Event&quot; links.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Link
+                  href={`/dashboard/events/${marketingSample.id}/edit`}
+                  className="rounded-full bg-teal px-5 py-2.5 text-sm font-bold text-white hover:bg-teal/90"
+                >
+                  Edit sample event
+                </Link>
+                <Link
+                  href={`/dashboard/events/${marketingSample.id}/homes`}
+                  className="rounded-full border border-teal-200 px-5 py-2.5 text-sm font-medium text-teal hover:bg-teal/5"
+                >
+                  Manage sample homes
+                </Link>
+                <Link href="/admin" className="rounded-full px-2 py-2.5 text-sm text-teal hover:underline">
+                  Admin settings
+                </Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="mt-2 text-sm text-charcoal/70">
+                The public sample page is a preview only until you install the editable copy.
+              </p>
+              <Link
+                href="/admin"
+                className="mt-4 inline-block rounded-full bg-coral px-5 py-2.5 text-sm font-bold text-white hover:bg-coral/90"
+              >
+                Open Admin to install sample
+              </Link>
+            </>
+          )}
+        </section>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-charcoal">Your Events</h1>
@@ -114,14 +165,23 @@ export default async function DashboardPage() {
             </div>
           </div>
         ) : (
-          events.map((event) => (
-            <EventCard
-              key={event.id}
-              event={event}
-              homeCount={homeCounts[event.id] || 0}
-              showActions
-            />
-          ))
+          <>
+            {showSampleOnDashboard && marketingSample && (
+              <EventCard
+                event={marketingSample}
+                homeCount={marketingSample.homes.length}
+                showActions
+              />
+            )}
+            {events.map((event) => (
+              <EventCard
+                key={event.id}
+                event={event}
+                homeCount={homeCounts[event.id] || 0}
+                showActions
+              />
+            ))}
+          </>
         )}
       </div>
     </DashboardShell>

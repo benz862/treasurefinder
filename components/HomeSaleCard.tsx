@@ -1,23 +1,24 @@
+"use client";
+
+import Link from "next/link";
 import { getDirectionsUrl, formatTime } from "@/lib/utils";
-import { MapPin, Clock, ExternalLink } from "lucide-react";
+import { MapPin, Clock, ExternalLink, ChevronRight } from "lucide-react";
 import type { HomeWithPhotos } from "@/types/database";
 
 interface HomeSaleCardProps {
   home: HomeWithPhotos;
+  eventSlug?: string;
   onSelect?: (home: HomeWithPhotos) => void;
   selected?: boolean;
 }
 
-export function HomeSaleCard({ home, onSelect, selected }: HomeSaleCardProps) {
-  return (
-    <article
-      className={`rounded-2xl border bg-white p-5 shadow-sm transition-all ${
-        selected ? "border-teal ring-2 ring-teal/30" : "border-teal-100 hover:border-teal/40"
-      } ${onSelect ? "cursor-pointer" : ""}`}
-      onClick={() => onSelect?.(home)}
-    >
+export function HomeSaleCard({ home, eventSlug, onSelect, selected }: HomeSaleCardProps) {
+  const detailHref = eventSlug ? `/event/${eventSlug}/home/${home.id}` : null;
+
+  const cardContent = (
+    <>
       <div className="flex items-start justify-between gap-2">
-        <div>
+        <div className="min-w-0 flex-1">
           <h3 className="font-bold text-charcoal">
             {home.seller_name || "Garage Sale"}
           </h3>
@@ -26,10 +27,13 @@ export function HomeSaleCard({ home, onSelect, selected }: HomeSaleCardProps) {
             {home.address}
           </p>
         </div>
+        {detailHref && (
+          <ChevronRight className="h-5 w-5 shrink-0 text-teal/60" aria-hidden />
+        )}
       </div>
 
       {home.description && (
-        <p className="mt-3 text-sm text-charcoal/80">{home.description}</p>
+        <p className="mt-3 line-clamp-3 text-sm text-charcoal/80">{home.description}</p>
       )}
 
       {home.featured_items.length > 0 && (
@@ -66,12 +70,14 @@ export function HomeSaleCard({ home, onSelect, selected }: HomeSaleCardProps) {
       )}
 
       {home.notes && (
-        <p className="mt-2 rounded-lg bg-cream px-3 py-2 text-xs text-charcoal/70">{home.notes}</p>
+        <p className="mt-2 line-clamp-2 rounded-lg bg-cream px-3 py-2 text-xs text-charcoal/70">
+          {home.notes}
+        </p>
       )}
 
       {home.home_photos.length > 0 && (
         <div className="mt-3 flex gap-2 overflow-x-auto">
-          {home.home_photos.map((photo) => (
+          {home.home_photos.slice(0, 4).map((photo) => (
             <img
               key={photo.id}
               src={photo.image_url}
@@ -79,20 +85,60 @@ export function HomeSaleCard({ home, onSelect, selected }: HomeSaleCardProps) {
               className="h-16 w-16 shrink-0 rounded-lg object-cover"
             />
           ))}
+          {home.home_photos.length > 4 && (
+            <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-teal/10 text-xs font-semibold text-teal">
+              +{home.home_photos.length - 4}
+            </span>
+          )}
         </div>
       )}
 
+      {detailHref && (
+        <p className="mt-4 text-sm font-medium text-teal">View full listing →</p>
+      )}
+    </>
+  );
+
+  if (!detailHref) {
+    return (
+      <article
+        className={`rounded-2xl border bg-white p-5 shadow-sm transition-all ${
+          selected ? "border-teal ring-2 ring-teal/30" : "border-teal-100 hover:border-teal/40"
+        } ${onSelect ? "cursor-pointer" : ""}`}
+        onClick={() => onSelect?.(home)}
+      >
+        {cardContent}
+      </article>
+    );
+  }
+
+  return (
+    <article
+      className={`overflow-hidden rounded-2xl border bg-white shadow-sm transition-all ${
+        selected ? "border-teal ring-2 ring-teal/30" : "border-teal-100 hover:border-teal/40 hover:shadow-md"
+      }`}
+    >
+      <Link
+        href={detailHref}
+        className="block p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal/40"
+        onClick={() => onSelect?.(home)}
+        onMouseEnter={() => onSelect?.(home)}
+        onFocus={() => onSelect?.(home)}
+      >
+        {cardContent}
+      </Link>
       {home.address && (
-        <a
-          href={getDirectionsUrl(home.address)}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-teal px-4 py-2 text-sm font-medium text-white hover:bg-teal/90"
-        >
-          Get Directions
-          <ExternalLink className="h-3.5 w-3.5" />
-        </a>
+        <div className="border-t border-teal-50 bg-cream/40 px-5 py-3">
+          <a
+            href={getDirectionsUrl(home.address)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-full bg-teal px-4 py-2 text-sm font-medium text-white hover:bg-teal/90"
+          >
+            Get Directions
+            <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        </div>
       )}
     </article>
   );

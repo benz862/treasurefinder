@@ -3,7 +3,10 @@ import { notFound } from "next/navigation";
 import { Header, Footer } from "@/components/Layout";
 import { PublicEventPage } from "@/components/PublicEventPage";
 import { createClient } from "@/lib/supabase/server";
-import { SAMPLE_EVENT, SAMPLE_EVENT_SLUG } from "@/lib/sample-event";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { geocodeAddress } from "@/lib/maps";
+import { SAMPLE_EVENT_SLUG } from "@/lib/sample-event";
+import { getPublicSampleEvent } from "@/lib/server/marketing-sample";
 import { formatEventDateRange } from "@/lib/utils";
 import type { EventWithHomes } from "@/types/database";
 
@@ -13,7 +16,7 @@ interface PageProps {
 
 async function getEvent(slug: string): Promise<EventWithHomes | null> {
   if (slug === SAMPLE_EVENT_SLUG) {
-    return SAMPLE_EVENT;
+    return getPublicSampleEvent();
   }
 
   const supabase = await createClient();
@@ -25,6 +28,29 @@ async function getEvent(slug: string): Promise<EventWithHomes | null> {
     .single();
 
   if (!event) return null;
+
+  if (!event.latitude || !event.longitude) {
+    const geo = await geocodeAddress({
+      address: event.main_address,
+      city: event.city,
+      region: event.region,
+      country: event.country,
+    });
+
+    if (geo) {
+      event.latitude = geo.latitude;
+      event.longitude = geo.longitude;
+
+      const admin = createAdminClient();
+      await admin
+        .from("events")
+        .update({
+          latitude: geo.latitude,
+          longitude: geo.longitude,
+        })
+        .eq("id", event.id);
+    }
+  }
 
   const { data: homes } = await supabase
     .from("homes")

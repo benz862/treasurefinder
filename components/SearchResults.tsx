@@ -1,14 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { MapView } from "@/components/MapView";
+import { DiscoveryMap } from "@/components/DiscoveryMap";
+import { ItemSearchMatchCard } from "@/components/ItemSearchMatchCard";
 import { PublicDiscoveryEventCard } from "@/components/PublicDiscoveryEventCard";
 import { CATEGORIES } from "@/lib/categories";
-import type { DiscoveryEvent } from "@/lib/discovery";
+import type { DiscoveryEventResult } from "@/lib/discovery";
 
 interface SearchResultsProps {
-  events: DiscoveryEvent[];
+  events: DiscoveryEventResult[];
   initialFilters: {
+    item?: string;
     location?: string;
     region?: string;
     category?: string;
@@ -21,6 +23,9 @@ export function SearchResults({ events, initialFilters }: SearchResultsProps) {
   const [category, setCategory] = useState(initialFilters.category || "");
   const [date, setDate] = useState(initialFilters.date || "upcoming");
   const [distance, setDistance] = useState(initialFilters.distance || "");
+
+  const itemQuery = initialFilters.item?.trim() || "";
+  const isItemSearch = itemQuery.length > 0;
 
   const filteredEvents = useMemo(() => {
     let results = events;
@@ -44,26 +49,17 @@ export function SearchResults({ events, initialFilters }: SearchResultsProps) {
     return results;
   }, [events, date]);
 
-  const mapPins = useMemo(
-    () =>
-      filteredEvents
-        .filter((event) => event.latitude != null && event.longitude != null)
-        .map((event) => ({
-          id: event.id,
-          lat: Number(event.latitude),
-          lng: Number(event.longitude),
-          title: event.title,
-          address: `${event.city}, ${event.region}`,
-        })),
-    [filteredEvents]
-  );
-
-  const center = mapPins[0]
-    ? { lat: mapPins[0].lat, lng: mapPins[0].lng }
-    : undefined;
+  const listingMatchCount = useMemo(() => {
+    if (!isItemSearch) return 0;
+    return filteredEvents.reduce(
+      (sum, event) => sum + (event.matchingHomes?.length || 0),
+      0
+    );
+  }, [filteredEvents, isItemSearch]);
 
   function buildFilterUrl(updates: Record<string, string>) {
     const params = new URLSearchParams();
+    if (initialFilters.item) params.set("item", initialFilters.item);
     if (initialFilters.location) params.set("location", initialFilters.location);
     if (initialFilters.region) params.set("region", initialFilters.region);
     if (updates.category ?? category) params.set("category", updates.category ?? category);
@@ -121,6 +117,7 @@ export function SearchResults({ events, initialFilters }: SearchResultsProps) {
                     window.location.href = buildFilterUrl({ distance: e.target.value });
                   }}
                   className="mt-1 w-full rounded-xl border border-teal-100 px-3 py-2 text-sm"
+                  disabled={!initialFilters.location}
                 >
                   <option value="">Any distance</option>
                   <option value="25">Within 25 miles</option>
@@ -134,35 +131,86 @@ export function SearchResults({ events, initialFilters }: SearchResultsProps) {
 
         <div>
           <p className="text-sm text-charcoal/60">
-            {filteredEvents.length} event{filteredEvents.length === 1 ? "" : "s"} found
-            {initialFilters.location ? ` near ${initialFilters.location}` : ""}
-            {initialFilters.region ? `, ${initialFilters.region}` : ""}
+            {isItemSearch ? (
+              <>
+                {listingMatchCount > 0
+                  ? `${listingMatchCount} listing${listingMatchCount === 1 ? "" : "s"}`
+                  : `${filteredEvents.length} event${filteredEvents.length === 1 ? "" : "s"}`}{" "}
+                matching &ldquo;{itemQuery}&rdquo;
+                {initialFilters.location
+                  ? ` near ${initialFilters.location}`
+                  : " nationwide"}
+                {initialFilters.region ? `, ${initialFilters.region}` : ""}
+              </>
+            ) : (
+              <>
+                {filteredEvents.length} event{filteredEvents.length === 1 ? "" : "s"} found
+                {initialFilters.location ? ` near ${initialFilters.location}` : ""}
+                {initialFilters.region ? `, ${initialFilters.region}` : ""}
+              </>
+            )}
           </p>
 
-          {mapPins.length > 0 && (
-            <div className="mt-6">
-              <MapView
-                pins={mapPins}
-                center={center}
-                className="h-[280px] w-full rounded-2xl md:h-[360px]"
-              />
+          <div className="mt-6">
+            <DiscoveryMap
+              events={filteredEvents}
+              className="h-[280px] w-full rounded-2xl md:h-[360px]"
+            />
+          </div>
+
+          {filteredEvents.length === 0 ? (
+            <div className="mt-8 rounded-2xl border border-dashed border-teal-200 bg-white p-10 text-center">
+              <p className="text-lg font-medium text-charcoal">No sales found</p>
+              <p className="mt-2 text-sm text-charcoal/60">
+                {isItemSearch
+                  ? "Try different keywords, check spelling, or search without a location to scan the whole country."
+                  : "Try a nearby city, another weekend, or browse by state below."}
+              </p>
+            </div>
+          ) : isItemSearch ? (
+            <div className="mt-8 space-y-8">
+              {filteredEvents.map((event) => {
+                const matches = event.matchingHomes || [];
+                if (matches.length > 0) {
+                  return (
+                    <section key={event.id}>
+                      <h3 className="text-lg font-bold text-charcoal">{event.title}</h3>
+                      <p className="text-sm text-charcoal/60">
+                        {event.city}, {event.region}
+                      </p>
+                      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                        {matches.map((match) => (
+                          <ItemSearchMatchCard
+                            key={match.homeId}
+                            event={event}
+                            match={match}
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  );
+                }
+
+                return (
+                  <section key={event.id}>
+                    <h3 className="text-lg font-bold text-charcoal">{event.title}</h3>
+                    <p className="mt-1 text-sm text-charcoal/60">
+                      Event mentions &ldquo;{itemQuery}&rdquo; — browse all participating homes.
+                    </p>
+                    <div className="mt-4 max-w-md">
+                      <PublicDiscoveryEventCard event={event} />
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="mt-8 grid gap-5 sm:grid-cols-2">
+              {filteredEvents.map((event) => (
+                <PublicDiscoveryEventCard key={event.id} event={event} />
+              ))}
             </div>
           )}
-
-          <div className="mt-8 grid gap-5 sm:grid-cols-2">
-            {filteredEvents.length === 0 ? (
-              <div className="col-span-full rounded-2xl border border-dashed border-teal-200 bg-white p-10 text-center">
-                <p className="text-lg font-medium text-charcoal">No sales found</p>
-                <p className="mt-2 text-sm text-charcoal/60">
-                  Try a nearby city, another weekend, or browse by state below.
-                </p>
-              </div>
-            ) : (
-              filteredEvents.map((event) => (
-                <PublicDiscoveryEventCard key={event.id} event={event} />
-              ))
-            )}
-          </div>
         </div>
       </div>
     </div>

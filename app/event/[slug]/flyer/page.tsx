@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { SAMPLE_EVENT, SAMPLE_EVENT_SLUG } from "@/lib/sample-event";
+import { SAMPLE_EVENT_SLUG } from "@/lib/sample-event";
+import { getPublicSampleEvent } from "@/lib/server/marketing-sample";
 import { getTier } from "@/lib/tiers";
 import { formatEventDateRange, formatTime, getSiteUrl } from "@/lib/utils";
 import { QRCodeSVG } from "qrcode.react";
@@ -12,7 +13,7 @@ interface PageProps {
 }
 
 async function getEvent(slug: string) {
-  if (slug === SAMPLE_EVENT_SLUG) return SAMPLE_EVENT;
+  if (slug === SAMPLE_EVENT_SLUG) return getPublicSampleEvent();
 
   const supabase = await createClient();
   const { data } = await supabase

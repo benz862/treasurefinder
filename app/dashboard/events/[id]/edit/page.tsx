@@ -4,7 +4,11 @@ import { DashboardShell } from "@/components/DashboardShell";
 import { EventForm } from "@/components/EventForm";
 import { QRCodeGenerator } from "@/components/QRCodeGenerator";
 import { LimitCounter } from "@/components/LimitCounter";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { isPlatformAdmin } from "@/lib/admin";
+import { assertEventOwner, getSessionOrganizer } from "@/lib/server/organizer";
+import { SAMPLE_EVENT_SLUG } from "@/lib/sample-event";
 import { getSiteUrl } from "@/lib/utils";
 import { getTier, type TierId } from "@/lib/tiers";
 
@@ -14,39 +18,58 @@ interface PageProps {
 
 export default async function EditEventPage({ params }: PageProps) {
   const { id } = await params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login");
+  const session = await getSessionOrganizer();
+  if (!session) redirect("/auth/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
+  const { error: accessError } = await assertEventOwner(id, session.profile.id, {
+    email: session.user.email,
+    role: session.profile.role,
+  });
 
-  const { data: event } = await supabase
-    .from("events")
-    .select("*")
-    .eq("id", id)
-    .single();
+  if (accessError) notFound();
 
-  if (!event || event.organizer_id !== profile?.id) notFound();
+  const isAdmin = isPlatformAdmin({
+    email: session.user.email,
+    role: session.profile.role,
+  });
+  const db = isAdmin ? createAdminClient() : await createClient();
+  const { data: event } = await db.from("events").select("*").eq("id", id).single();
 
-  const { count: homeCount } = await supabase
+  if (!event) notFound();
+
+  const { count: homeCount } = await db
     .from("homes")
     .select("*", { count: "exact", head: true })
     .eq("event_id", id);
 
   const tier = getTier(event.tier as TierId);
   const eventUrl = `${getSiteUrl()}/event/${event.slug}`;
+  const isMarketingSample = event.slug === SAMPLE_EVENT_SLUG;
 
   return (
-    <DashboardShell userEmail={user.email}>
+    <DashboardShell userEmail={session.user.email}>
       <div className="mb-6">
         <Link href="/dashboard" className="text-sm text-teal hover:underline">
           ← Back to Dashboard
         </Link>
+        {isMarketingSample && (
+          <Link
+            href="/admin"
+            className="ml-4 text-sm text-teal hover:underline"
+          >
+            Admin → Marketing sample
+          </Link>
+        )}
         <h1 className="mt-2 text-2xl font-bold text-charcoal">Edit Event</h1>
+        {isMarketingSample && (
+          <p className="mt-2 text-sm text-charcoal/60">
+            This is the public marketing sample. Keep the slug{" "}
+            <code className="rounded bg-teal/10 px-1.5 py-0.5 text-teal">
+              {SAMPLE_EVENT_SLUG}
+            </code>{" "}
+            so homepage and footer links keep working.
+          </p>
+        )}
       </div>
 
       <div className="mb-6 grid gap-4 md:grid-cols-2">
@@ -65,7 +88,7 @@ export default async function EditEventPage({ params }: PageProps) {
         )}
       </div>
 
-      <EventForm profileId={profile!.id} event={event} />
+      <EventForm profileId={session.profile.id} event={event} adminBypass />
 
       <div className="mt-8 flex flex-wrap gap-3">
         <Link

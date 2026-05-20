@@ -11,7 +11,7 @@ export function Header() {
             Find Sales
           </Link>
           <Link href="/#browse-state" className="hover:text-teal">
-            Browse
+            Browse by State
           </Link>
           <Link href="/pricing" className="hover:text-teal">
             Pricing
@@ -58,7 +58,7 @@ export function Footer() {
               Find Sales
             </Link>
             <Link href="/#browse-state" className="hover:underline">
-              Browse by State
+              Browse by State or Province
             </Link>
             <Link href="/pricing" className="hover:underline">
               Pricing

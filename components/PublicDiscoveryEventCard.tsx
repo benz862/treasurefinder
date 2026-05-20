@@ -1,4 +1,5 @@
-import Link from "next/link";
+"use client";
+
 import { Calendar, Home, MapPin, Sparkles } from "lucide-react";
 import { formatEventDateRange } from "@/lib/utils";
 import type { DiscoveryEvent } from "@/lib/discovery";
@@ -8,10 +9,37 @@ interface PublicDiscoveryEventCardProps {
 }
 
 export function PublicDiscoveryEventCard({ event }: PublicDiscoveryEventCardProps) {
+  if (!event.slug) {
+    return (
+      <article className="overflow-hidden rounded-3xl border border-teal-100 bg-white p-5 shadow-sm">
+        <h3 className="text-lg font-bold text-charcoal">{event.title}</h3>
+        <p className="mt-2 text-sm text-charcoal/60">Event page unavailable</p>
+      </article>
+    );
+  }
+
+  const href = `/event/${event.slug}`;
+
+  function handleClick(e: React.MouseEvent<HTMLAnchorElement>) {
+    if (
+      e.button !== 0 ||
+      e.metaKey ||
+      e.ctrlKey ||
+      e.shiftKey ||
+      e.altKey ||
+      e.defaultPrevented
+    ) {
+      return;
+    }
+    e.preventDefault();
+    window.location.assign(href);
+  }
+
   return (
-    <Link
-      href={`/event/${event.slug}`}
-      className="group overflow-hidden rounded-3xl border border-teal-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+    <a
+      href={href}
+      onClick={handleClick}
+      className="group block cursor-pointer overflow-hidden rounded-3xl border border-teal-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-teal/40"
     >
       <div className="relative aspect-[16/9] bg-gradient-to-br from-yellow/30 via-teal/20 to-coral/20">
         {event.banner_image_url ? (
@@ -19,14 +47,17 @@ export function PublicDiscoveryEventCard({ event }: PublicDiscoveryEventCardProp
             src={event.banner_image_url}
             alt={event.title}
             className="h-full w-full object-cover"
+            draggable={false}
           />
         ) : (
           <div className="flex h-full items-center justify-center px-6 text-center">
-            <p className="text-lg font-bold text-teal/80">{event.city}, {event.region}</p>
+            <p className="text-lg font-bold text-teal/80">
+              {event.city}, {event.region}
+            </p>
           </div>
         )}
         {event.is_featured && (
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-yellow px-3 py-1 text-xs font-bold text-charcoal">
+          <span className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-yellow px-3 py-1 text-xs font-bold text-charcoal">
             <Sparkles className="h-3.5 w-3.5" />
             Featured
           </span>
@@ -49,6 +80,6 @@ export function PublicDiscoveryEventCard({ event }: PublicDiscoveryEventCardProp
           </p>
         </div>
       </div>
-    </Link>
+    </a>
   );
 }

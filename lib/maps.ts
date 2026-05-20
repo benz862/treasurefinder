@@ -1,3 +1,8 @@
+/** Geographic center of the contiguous United States (discovery/browse default). */
+export const US_MAP_CENTER = { lat: 39.8283, lng: -98.5795 };
+
+export const US_MAP_ZOOM = 5;
+
 export type GeocodeInput = {
   address: string;
   city?: string;
@@ -41,6 +46,17 @@ function resultMatchesRegion(
   );
 }
 
+export function pickGeocodeResult<
+  T extends {
+    address_components?: Array<{ long_name: string; short_name: string; types: string[] }>;
+  },
+>(results: T[], region?: string) {
+  if (!results.length) return null;
+  if (!region) return results[0];
+
+  return results.find((result) => resultMatchesRegion(result, region)) || results[0];
+}
+
 export async function geocodeAddress(
   input: string | GeocodeInput
 ): Promise<{
@@ -71,13 +87,15 @@ export async function geocodeAddress(
     const data = await res.json();
 
     if (data.status === "OK" && data.results?.length) {
-      const matched =
-        structured.region &&
-        data.results.find((result: { address_components?: Array<{ long_name: string; short_name: string; types: string[] }> }) =>
-          resultMatchesRegion(result, structured.region)
-        );
+      const chosen = pickGeocodeResult(
+        data.results as Array<{
+          address_components?: Array<{ long_name: string; short_name: string; types: string[] }>;
+          geometry: { location: { lat: number; lng: number } };
+        }>,
+        structured.region
+      );
 
-      const chosen = matched || data.results[0];
+      if (!chosen?.geometry) return null;
 
       return {
         latitude: chosen.geometry.location.lat,
@@ -97,4 +115,108 @@ export interface MapPin {
   lng: number;
   title: string;
   address: string;
+  /** Discovery/browse pins: navigate to the event page when clicked. */
+  href?: string;
+}
+
+export type GeocodeEventTarget = GeocodeInput & {
+  id: string;
+  slug: string;
+  title: string;
+  displayAddress?: string;
+};
+
+export function buildDiscoveryMapPins(
+  events: Array<{
+    id: string;
+    slug: string;
+    title: string;
+    city: string;
+    region: string;
+    main_address: string;
+    latitude: number | null;
+    longitude: number | null;
+  }>
+): { pins: MapPin[]; geocodeEvents: GeocodeEventTarget[] } {
+  const pins: MapPin[] = [];
+  const geocodeEvents: GeocodeEventTarget[] = [];
+
+  for (const event of events) {
+    const displayAddress = `${event.city}, ${event.region}`;
+    const href = `/event/${event.slug}`;
+
+    if (event.latitude != null && event.longitude != null) {
+      pins.push({
+        id: event.id,
+        lat: Number(event.latitude),
+        lng: Number(event.longitude),
+        title: event.title,
+        address: displayAddress,
+        href,
+      });
+      continue;
+    }
+
+    if (!event.main_address?.trim()) continue;
+
+    geocodeEvents.push({
+      id: event.id,
+      slug: event.slug,
+      title: event.title,
+      address: event.main_address,
+      city: event.city,
+      region: event.region,
+      displayAddress,
+    });
+  }
+
+  return { pins, geocodeEvents };
+}
+
+export const EVENT_HQ_PIN_ID = "__event_hq__";
+
+export function buildEventMapPins(options: {
+  event: {
+    id: string;
+    title: string;
+    main_address: string;
+    latitude: number | null;
+    longitude: number | null;
+  };
+  homes: Array<{
+    id: string;
+    seller_name: string | null;
+    address: string | null;
+    latitude: number | null;
+    longitude: number | null;
+  }>;
+}) {
+  const pins: MapPin[] = [];
+
+  if (options.event.latitude != null && options.event.longitude != null) {
+    pins.push({
+      id: EVENT_HQ_PIN_ID,
+      lat: Number(options.event.latitude),
+      lng: Number(options.event.longitude),
+      title: "Main event location",
+      address: options.event.main_address,
+    });
+  }
+
+  for (const home of options.homes) {
+    if (home.latitude == null || home.longitude == null || !home.address) continue;
+
+    const lat = Number(home.latitude);
+    const lng = Number(home.longitude);
+
+    pins.push({
+      id: home.id,
+      lat,
+      lng,
+      title: home.seller_name || "Garage Sale",
+      address: home.address,
+    });
+  }
+
+  return pins;
 }
