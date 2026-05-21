@@ -11,6 +11,8 @@ import {
   type GeocodeInput,
   type MapPin,
 } from "@/lib/maps";
+import { getCategoryByKey } from "@/lib/eventCategories";
+import { buildMarkerSvgDataUrl } from "@/lib/markerIcons";
 
 interface MapHeadquarters extends GeocodeInput {
   title?: string;
@@ -30,6 +32,8 @@ interface MapViewProps {
   center?: { lat: number; lng: number };
   /** Keep the full US view with pins visible; do not zoom to a single sale. */
   nationwideView?: boolean;
+  /** Show floating preview card flow instead of navigating on pin click. */
+  previewMode?: boolean;
   onPinClick?: (pinId: string) => void;
   selectedPinId?: string | null;
   className?: string;
@@ -50,6 +54,16 @@ function pinMarkerStyle(pin: MapPin, selectedPinId?: string | null) {
   const isHQ = pin.id === EVENT_HQ_PIN_ID;
   const isSelected = selectedPinId === pin.id;
   const isDiscovery = Boolean(pin.href);
+
+  if (isDiscovery && pin.category && typeof google !== "undefined") {
+    const cat = getCategoryByKey(pin.category);
+    const scale = isSelected ? 1.2 : 1;
+    return {
+      url: buildMarkerSvgDataUrl(cat.color, cat.markerIcon),
+      scaledSize: new google.maps.Size(36 * scale, 44 * scale),
+      anchor: new google.maps.Point(18 * scale, 44 * scale),
+    };
+  }
 
   return {
     path: google.maps.SymbolPath.CIRCLE,
@@ -165,6 +179,7 @@ export function MapView({
   geocodeEvents = [],
   center,
   nationwideView = false,
+  previewMode = false,
   onPinClick,
   selectedPinId,
   className = "h-[400px] w-full rounded-2xl",
@@ -341,6 +356,8 @@ export function MapView({
           title: event.title,
           address: event.displayAddress || event.address,
           href: `/event/${event.slug}`,
+          slug: event.slug,
+          category: event.category,
         });
       }
 
@@ -391,7 +408,13 @@ export function MapView({
         });
 
         if (pin.href) {
-          marker.addListener("click", () => window.location.assign(pin.href!));
+          marker.addListener("click", () => {
+            if (previewMode) {
+              onPinClickRef.current?.(pin.id);
+            } else {
+              window.location.assign(pin.href!);
+            }
+          });
         } else if (pin.id !== EVENT_HQ_PIN_ID) {
           marker.addListener("click", () => onPinClickRef.current?.(pin.id));
         }
@@ -417,7 +440,7 @@ export function MapView({
         "Google Maps failed to initialize. Confirm billing is enabled and Maps JavaScript API is turned on."
       );
     }
-  }, [loaded, resolvedPins, center, selectedPinId, nationwideView]);
+  }, [loaded, resolvedPins, center, selectedPinId, nationwideView, previewMode]);
 
   if (error) {
     return (

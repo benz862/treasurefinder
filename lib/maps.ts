@@ -1,3 +1,6 @@
+import type { EventCategoryKey } from "@/lib/eventCategories";
+import { inferEventCategory } from "@/lib/inferEventCategory";
+
 /** Geographic center of the contiguous United States (discovery/browse default). */
 export const US_MAP_CENTER = { lat: 39.8283, lng: -98.5795 };
 
@@ -117,6 +120,8 @@ export interface MapPin {
   address: string;
   /** Discovery/browse pins: navigate to the event page when clicked. */
   href?: string;
+  slug?: string;
+  category?: EventCategoryKey;
 }
 
 export type GeocodeEventTarget = GeocodeInput & {
@@ -124,6 +129,7 @@ export type GeocodeEventTarget = GeocodeInput & {
   slug: string;
   title: string;
   displayAddress?: string;
+  category?: EventCategoryKey;
 };
 
 export function buildDiscoveryMapPins(
@@ -131,6 +137,7 @@ export function buildDiscoveryMapPins(
     id: string;
     slug: string;
     title: string;
+    description?: string | null;
     city: string;
     region: string;
     main_address: string;
@@ -153,6 +160,8 @@ export function buildDiscoveryMapPins(
         title: event.title,
         address: displayAddress,
         href,
+        slug: event.slug,
+        category: inferEventCategory(event),
       });
       continue;
     }
@@ -167,6 +176,7 @@ export function buildDiscoveryMapPins(
       city: event.city,
       region: event.region,
       displayAddress,
+      category: inferEventCategory(event),
     });
   }
 

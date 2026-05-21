@@ -7,6 +7,15 @@ export function Header() {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
         <Logo size="sm" />
         <nav className="hidden items-center gap-6 text-sm font-medium text-charcoal/80 md:flex">
+          <Link href="/explore" className="hover:text-teal">
+            Explore
+          </Link>
+          <Link href="/categories" className="hover:text-teal">
+            Categories
+          </Link>
+          <Link href="/weekend" className="hover:text-teal">
+            This Weekend
+          </Link>
           <Link href="/search" className="hover:text-teal">
             Find Sales
           </Link>
@@ -15,9 +24,6 @@ export function Header() {
           </Link>
           <Link href="/pricing" className="hover:text-teal">
             Pricing
-          </Link>
-          <Link href="/event/maplewood-community-garage-sale" className="hover:text-teal">
-            Sample Event
           </Link>
           <Link href="/auth/login" className="hover:text-teal">
             Log In
@@ -50,10 +56,20 @@ export function Footer() {
               <Logo size="md" href={null} />
             </div>
             <p className="mt-3 text-sm text-white/80">
-              Turn neighborhood garage sales into organized, map-based events.
+              A modern discovery engine for local events — garage sales, markets, and community
+              treasure hunts through interactive maps.
             </p>
           </div>
           <div className="flex flex-wrap gap-4 text-sm">
+            <Link href="/explore" className="hover:underline">
+              Explore Map
+            </Link>
+            <Link href="/weekend" className="hover:underline">
+              This Weekend
+            </Link>
+            <Link href="/categories" className="hover:underline">
+              Categories
+            </Link>
             <Link href="/search" className="hover:underline">
               Find Sales
             </Link>
@@ -62,9 +78,6 @@ export function Footer() {
             </Link>
             <Link href="/pricing" className="hover:underline">
               Pricing
-            </Link>
-            <Link href="/event/maplewood-community-garage-sale" className="hover:underline">
-              Sample Event
             </Link>
             <Link href="/auth/login" className="hover:underline">
               Organizer Login

@@ -42,30 +42,35 @@ export default async function HomePage() {
               Treasure hunting meets local discovery
             </span>
             <h1 className="mt-6 text-3xl font-bold leading-tight text-charcoal md:text-5xl">
-              Find Garage Sales, Estate Sales &amp; Hidden Treasures Near You
+              Discover Local Treasure Hunts, Markets &amp; Community Events
             </h1>
             <p className="mx-auto mt-5 max-w-3xl text-lg text-charcoal/70">
-              Discover neighborhood sales, estate sales, and community events — or search for
-              specific treasures like antiques, vinyl, tools, and collectibles anywhere in the
-              country.
+              Explore garage sales, estate sales, flea markets, craft fairs, and community events
+              through colorful interactive maps — or search for specific treasures nationwide.
             </p>
             <div className="mx-auto mt-8 max-w-3xl text-left">
               <DiscoverySearchForm />
             </div>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <Link
+                href="/explore"
+                className="inline-flex items-center gap-2 rounded-full bg-coral px-6 py-3 font-bold text-white hover:bg-coral/90"
+              >
+                Explore Events
+                <ArrowRight className="h-5 w-5" />
+              </Link>
+              <Link
                 href="/search"
                 className="inline-flex items-center gap-2 rounded-full border-2 border-teal px-6 py-3 font-bold text-teal hover:bg-teal/5"
               >
                 <Search className="h-5 w-5" />
-                Browse All Sales
+                Search Treasures
               </Link>
               <Link
                 href="/pricing"
-                className="inline-flex items-center gap-2 rounded-full bg-coral px-6 py-3 font-bold text-white hover:bg-coral/90"
+                className="inline-flex items-center gap-2 rounded-full border-2 border-charcoal/15 px-6 py-3 font-bold text-charcoal hover:bg-charcoal/5"
               >
                 Create Event
-                <ArrowRight className="h-5 w-5" />
               </Link>
             </div>
           </div>
@@ -73,12 +78,20 @@ export default async function HomePage() {
 
         <section className="border-y border-teal-100 bg-white px-4 py-10 md:py-12">
           <div className="mx-auto max-w-6xl">
-            <h2 className="text-2xl font-bold text-charcoal">Garage Sales Across the Map</h2>
-            <p className="mt-1 max-w-2xl text-sm text-charcoal/60">
-              Blue dots show active sales nationwide. Zoom in, then click a dot to open that event.
-            </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-charcoal">Live Event Map</h2>
+                <p className="mt-1 max-w-2xl text-sm text-charcoal/60">
+                  Color-coded markers show active events nationwide. Filter by type, click a pin
+                  for a preview, then visit the full event page.
+                </p>
+              </div>
+              <Link href="/explore" className="text-sm font-bold text-teal hover:underline">
+                Full explore view →
+              </Link>
+            </div>
             <div className="mt-6">
-              <DiscoveryMap events={mapEvents} />
+              <DiscoveryMap events={mapEvents} showCategoryFilters previewOnClick />
             </div>
           </div>
         </section>
@@ -92,7 +105,7 @@ export default async function HomePage() {
                   Upcoming sales, popular events, and featured neighborhood hunts.
                 </p>
               </div>
-              <Link href="/search?date=weekend" className="text-sm font-medium text-teal hover:underline">
+              <Link href="/weekend" className="text-sm font-medium text-teal hover:underline">
                 View all
               </Link>
             </div>
@@ -121,10 +134,37 @@ export default async function HomePage() {
 
         <section className="bg-teal/5 px-4 py-14">
           <div className="mx-auto max-w-6xl">
-            <h2 className="text-2xl font-bold text-charcoal">Browse By Category</h2>
-            <p className="mt-1 text-sm text-charcoal/60">
-              Hunt for tools, antiques, furniture, estate sales, and more.
-            </p>
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-charcoal">Browse By Event Type</h2>
+                <p className="mt-1 text-sm text-charcoal/60">
+                  Garage sales, estate sales, flea markets, craft fairs, and more.
+                </p>
+              </div>
+              <Link href="/categories" className="text-sm font-bold text-teal hover:underline">
+                All categories →
+              </Link>
+            </div>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                { label: "Garage Sales", color: "#C94F3D", href: "/explore?type=garage-sales" },
+                { label: "Estate Sales", color: "#7A2E3A", href: "/explore?type=estate-sales" },
+                { label: "Flea Markets", color: "#2E7C7B", href: "/explore?type=flea-markets" },
+                { label: "Craft Fairs", color: "#D89A2B", href: "/explore?type=craft-fairs" },
+              ].map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className="rounded-2xl border border-teal-100 bg-white px-5 py-4 text-left font-medium text-charcoal transition hover:-translate-y-0.5 hover:shadow-sm"
+                >
+                  <span
+                    className="mb-2 inline-block h-2.5 w-2.5 rounded-full"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="block">{item.label}</span>
+                </Link>
+              ))}
+            </div>
             <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {DISCOVERY_CATEGORIES.map((category) => (
                 <Link
@@ -132,7 +172,7 @@ export default async function HomePage() {
                   href={`/search?category=${encodeURIComponent(category.value)}`}
                   className="rounded-2xl border border-teal-100 bg-white px-5 py-4 text-left font-medium text-charcoal transition hover:border-teal hover:bg-teal/5"
                 >
-                  {category.label}
+                  Hunt: {category.label}
                 </Link>
               ))}
             </div>
