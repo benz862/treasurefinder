@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Suspense } from "react";
 import { Header, Footer } from "@/components/Layout";
 import { ExploreMapClient } from "@/components/ExploreMapClient";
 import { getMapEvents, hydrateEventCoordinates } from "@/lib/discovery";
@@ -17,7 +17,9 @@ export default async function ExplorePage() {
     <>
       <Header />
       <main>
-        <ExploreMapClient initialEvents={events} />
+        <Suspense fallback={<div className="mx-auto max-w-6xl px-4 py-20 text-center text-charcoal/60">Loading map…</div>}>
+          <ExploreMapClient initialEvents={events} />
+        </Suspense>
       </main>
       <Footer />
     </>

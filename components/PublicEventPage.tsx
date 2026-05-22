@@ -12,13 +12,18 @@ import { getTier } from "@/lib/tiers";
 import type { EventWithHomes } from "@/types/database";
 import { Calendar, Clock, MapPin, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { NearbyEventsSection } from "@/components/NearbyEventsSection";
+import { getCategoryByKey } from "@/lib/eventCategories";
+import { inferEventCategory } from "@/lib/inferEventCategory";
+import type { DiscoveryEvent } from "@/lib/discovery";
 
 interface PublicEventPageProps {
   event: EventWithHomes;
   isSample?: boolean;
+  nearbyEvents?: DiscoveryEvent[];
 }
 
-export function PublicEventPage({ event, isSample = false }: PublicEventPageProps) {
+export function PublicEventPage({ event, isSample = false, nearbyEvents = [] }: PublicEventPageProps) {
   const mapSectionRef = useRef<HTMLDivElement>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedHomeId, setSelectedHomeId] = useState<string | null>(null);
@@ -86,6 +91,7 @@ export function PublicEventPage({ event, isSample = false }: PublicEventPageProp
 
   const eventUrl = `${getSiteUrl()}/event/${event.slug}`;
   const tier = getTier(event.tier);
+  const category = getCategoryByKey(inferEventCategory(event));
   const showFlyer = tier?.includesFlyer;
   const showFeatured = event.is_featured || tier?.includesFeatured;
   const showPriorityStyling = tier?.includesPriorityStyling;
@@ -117,6 +123,12 @@ export function PublicEventPage({ event, isSample = false }: PublicEventPageProp
           <Sparkles className="h-3.5 w-3.5" /> Featured Event
         </span>
       )}
+      <span
+        className="mb-3 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold text-white"
+        style={{ backgroundColor: category.color }}
+      >
+        {category.label}
+      </span>
       {showPriorityStyling && !showFeatured && (
         <span className="mb-3 inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-xs font-bold text-white">
           Neighborhood Event
@@ -249,6 +261,12 @@ export function PublicEventPage({ event, isSample = false }: PublicEventPageProp
         <div className="mt-12 flex flex-col items-center gap-6 md:flex-row md:justify-center">
           <QRCodeGenerator url={eventUrl} eventTitle={event.title} />
         </div>
+
+        <NearbyEventsSection
+          events={nearbyEvents}
+          currentSlug={event.slug}
+          city={event.city}
+        />
       </div>
     </div>
   );

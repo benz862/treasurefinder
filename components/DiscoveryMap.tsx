@@ -14,6 +14,7 @@ interface DiscoveryMapProps {
   className?: string;
   showCategoryFilters?: boolean;
   previewOnClick?: boolean;
+  userLocation?: { lat: number; lng: number } | null;
 }
 
 export function DiscoveryMap({
@@ -21,6 +22,7 @@ export function DiscoveryMap({
   className,
   showCategoryFilters = false,
   previewOnClick = false,
+  userLocation = null,
 }: DiscoveryMapProps) {
   const [categories, setCategories] = useState<EventCategoryKey[]>([]);
   const [selectedPinId, setSelectedPinId] = useState<string | null>(null);
@@ -58,6 +60,7 @@ export function DiscoveryMap({
           <DiscoveryEventPreviewCard
             event={selectedEvent}
             onClose={() => setSelectedPinId(null)}
+            userLocation={userLocation}
           />
         </div>
       )}

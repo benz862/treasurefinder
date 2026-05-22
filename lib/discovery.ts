@@ -1,8 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isDemoEvent } from "@/lib/demo-events";
+import { haversineMiles } from "@/lib/geo";
 import { geocodeAddress } from "@/lib/maps";
 import { regionMatches } from "@/lib/locations";
+import { mergeWithSeedEvents } from "@/lib/seedPublicEvents";
 import type { Event } from "@/types/database";
 
 export type DiscoveryEvent = Event & { homeCount: number };
@@ -74,21 +76,6 @@ function eventMatchesDateRange(
   const to = dateTo || "9999-12-31";
 
   return start <= to && end >= from;
-}
-
-function haversineMiles(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number
-) {
-  const toRad = (value: number) => (value * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-  return 3958.8 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 function parseSearchTerms(text: string) {
@@ -319,12 +306,13 @@ export async function searchPublishedEvents(
   }
 
   const withCounts = await attachHomeCounts(filtered);
+  const enriched = mergeWithSeedEvents(withCounts);
 
   if (filters.itemQuery?.trim()) {
-    return attachItemMatches(withCounts, filters.itemQuery);
+    return attachItemMatches(enriched, filters.itemQuery);
   }
 
-  return withCounts;
+  return enriched;
 }
 
 /** Published events with optional item matches on participating homes (nationwide when no location set). */

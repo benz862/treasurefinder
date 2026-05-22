@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { Header, Footer } from "@/components/Layout";
-import { DiscoverySearchForm } from "@/components/DiscoverySearchForm";
-import { BrowseByState } from "@/components/BrowseByState";
+import { HeroDiscoverySection } from "@/components/HeroDiscoverySection";
 import { DiscoveryMap } from "@/components/DiscoveryMap";
 import { PublicDiscoveryEventCard } from "@/components/PublicDiscoveryEventCard";
+import { BrowseByState } from "@/components/BrowseByState";
+import { EVENT_CATEGORY_LIST } from "@/lib/eventCategories";
 import {
   getFeaturedEvents,
   getMapEvents,
@@ -11,8 +12,7 @@ import {
   getWeekendEvents,
   hydrateEventCoordinates,
 } from "@/lib/discovery";
-import { DISCOVERY_CATEGORIES } from "@/lib/locations";
-import { ArrowRight, MapPin, Search, Sparkles } from "lucide-react";
+import { ArrowRight, MapPin, Sparkles } from "lucide-react";
 
 export default async function HomePage() {
   const [weekendEvents, featuredEvents, upcomingEvents, mapEventsRaw] = await Promise.all([
@@ -23,58 +23,16 @@ export default async function HomePage() {
   ]);
 
   const mapEvents = await hydrateEventCoordinates(mapEventsRaw);
-
-  const showcaseEvents =
-    featuredEvents.length > 0
-      ? featuredEvents
-      : weekendEvents.length > 0
-        ? weekendEvents
-        : upcomingEvents;
+  const communityEvents = upcomingEvents.filter((event) =>
+    `${event.title} ${event.description ?? ""}`.toLowerCase().match(/community|bazaar|church|charity/),
+  );
+  const treasureHunts = featuredEvents.filter((event) => event.homeCount > 0);
 
   return (
     <>
       <Header />
-      <main>
-        <section className="relative overflow-hidden bg-gradient-to-br from-yellow/40 via-cream to-teal/10 px-4 py-12 md:py-16">
-          <div className="mx-auto max-w-5xl text-center">
-            <span className="inline-flex items-center gap-1 rounded-full bg-teal/10 px-4 py-1.5 text-sm font-medium text-teal">
-              <Sparkles className="h-4 w-4" />
-              Treasure hunting meets local discovery
-            </span>
-            <h1 className="mt-6 text-3xl font-bold leading-tight text-charcoal md:text-5xl">
-              Discover Local Treasure Hunts, Markets &amp; Community Events
-            </h1>
-            <p className="mx-auto mt-5 max-w-3xl text-lg text-charcoal/70">
-              Explore garage sales, estate sales, flea markets, craft fairs, and community events
-              through colorful interactive maps — or search for specific treasures nationwide.
-            </p>
-            <div className="mx-auto mt-8 max-w-3xl text-left">
-              <DiscoverySearchForm />
-            </div>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <Link
-                href="/explore"
-                className="inline-flex items-center gap-2 rounded-full bg-coral px-6 py-3 font-bold text-white hover:bg-coral/90"
-              >
-                Explore Events
-                <ArrowRight className="h-5 w-5" />
-              </Link>
-              <Link
-                href="/search"
-                className="inline-flex items-center gap-2 rounded-full border-2 border-teal px-6 py-3 font-bold text-teal hover:bg-teal/5"
-              >
-                <Search className="h-5 w-5" />
-                Search Treasures
-              </Link>
-              <Link
-                href="/pricing"
-                className="inline-flex items-center gap-2 rounded-full border-2 border-charcoal/15 px-6 py-3 font-bold text-charcoal hover:bg-charcoal/5"
-              >
-                Create Event
-              </Link>
-            </div>
-          </div>
-        </section>
+      <main className="pb-20 md:pb-0">
+        <HeroDiscoverySection />
 
         <section className="border-y border-teal-100 bg-white px-4 py-10 md:py-12">
           <div className="mx-auto max-w-6xl">
@@ -100,9 +58,9 @@ export default async function HomePage() {
           <div className="mx-auto max-w-6xl">
             <div className="flex items-end justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-bold text-charcoal">Featured This Weekend</h2>
+                <h2 className="text-2xl font-bold text-charcoal">Trending This Weekend</h2>
                 <p className="mt-1 text-sm text-charcoal/60">
-                  Upcoming sales, popular events, and featured neighborhood hunts.
+                  Garage sales, flea markets, estate sales, and craft fairs happening now.
                 </p>
               </div>
               <Link href="/weekend" className="text-sm font-medium text-teal hover:underline">
@@ -110,24 +68,9 @@ export default async function HomePage() {
               </Link>
             </div>
             <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {showcaseEvents.length === 0 ? (
-                <div className="col-span-full rounded-2xl border border-dashed border-teal-200 bg-white p-10 text-center">
-                  <p className="text-lg font-medium text-charcoal">Sales are coming soon</p>
-                  <p className="mt-2 text-sm text-charcoal/60">
-                    Explore the sample event below or create the first sale in your area.
-                  </p>
-                  <Link
-                    href="/event/maplewood-community-garage-sale"
-                    className="mt-6 inline-flex rounded-full bg-teal px-6 py-3 text-sm font-bold text-white"
-                  >
-                    View Sample Event
-                  </Link>
-                </div>
-              ) : (
-                showcaseEvents.map((event) => (
-                  <PublicDiscoveryEventCard key={event.id} event={event} />
-                ))
-              )}
+              {weekendEvents.map((event) => (
+                <PublicDiscoveryEventCard key={event.id} event={event} />
+              ))}
             </div>
           </div>
         </section>
@@ -136,45 +79,81 @@ export default async function HomePage() {
           <div className="mx-auto max-w-6xl">
             <div className="flex items-end justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-bold text-charcoal">Browse By Event Type</h2>
+                <h2 className="text-2xl font-bold text-charcoal">Browse By Category</h2>
                 <p className="mt-1 text-sm text-charcoal/60">
-                  Garage sales, estate sales, flea markets, craft fairs, and more.
+                  Each event type has its own color, mood, and discovery identity.
                 </p>
               </div>
               <Link href="/categories" className="text-sm font-bold text-teal hover:underline">
                 All categories →
               </Link>
             </div>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                { label: "Garage Sales", color: "#C94F3D", href: "/explore?type=garage-sales" },
-                { label: "Estate Sales", color: "#7A2E3A", href: "/explore?type=estate-sales" },
-                { label: "Flea Markets", color: "#2E7C7B", href: "/explore?type=flea-markets" },
-                { label: "Craft Fairs", color: "#D89A2B", href: "/explore?type=craft-fairs" },
-              ].map((item) => (
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {EVENT_CATEGORY_LIST.map((cat) => (
                 <Link
-                  key={item.label}
-                  href={item.href}
-                  className="rounded-2xl border border-teal-100 bg-white px-5 py-4 text-left font-medium text-charcoal transition hover:-translate-y-0.5 hover:shadow-sm"
+                  key={cat.key}
+                  href={`/explore?type=${cat.slug}`}
+                  className="group overflow-hidden rounded-3xl border border-teal-100 bg-white transition hover:-translate-y-1 hover:shadow-md"
                 >
-                  <span
-                    className="mb-2 inline-block h-2.5 w-2.5 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                  />
-                  <span className="block">{item.label}</span>
+                  <div
+                    className="relative flex h-28 items-end p-4"
+                    style={{
+                      background: `linear-gradient(160deg, ${cat.color} 0%, ${cat.color}99 55%, rgba(26,107,107,0.15) 100%)`,
+                    }}
+                  >
+                    <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                      {cat.mood}
+                    </span>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-bold text-charcoal group-hover:text-teal">{cat.label}</h3>
+                    <p className="mt-1 line-clamp-2 text-sm text-charcoal/60">{cat.description}</p>
+                  </div>
                 </Link>
               ))}
             </div>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {DISCOVERY_CATEGORIES.map((category) => (
-                <Link
-                  key={category.label}
-                  href={`/search?category=${encodeURIComponent(category.value)}`}
-                  className="rounded-2xl border border-teal-100 bg-white px-5 py-4 text-left font-medium text-charcoal transition hover:border-teal hover:bg-teal/5"
-                >
-                  Hunt: {category.label}
+          </div>
+        </section>
+
+        {treasureHunts.length > 0 && (
+          <section className="px-4 py-14">
+            <div className="mx-auto max-w-6xl">
+              <div className="flex items-end justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-charcoal">Featured Treasure Hunts</h2>
+                  <p className="mt-1 text-sm text-charcoal/60">
+                    Multi-home neighborhood sales built for route planning and discovery.
+                  </p>
+                </div>
+                <Link href="/explore?type=garage-sales" className="text-sm font-bold text-teal hover:underline">
+                  Hunt on the map →
                 </Link>
-              ))}
+              </div>
+              <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {treasureHunts.map((event) => (
+                  <PublicDiscoveryEventCard key={event.id} event={event} />
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        <section className="bg-gradient-to-br from-purple-50/80 via-cream to-teal/5 px-4 py-14">
+          <div className="mx-auto max-w-6xl">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-charcoal">Upcoming Community Events</h2>
+                <p className="mt-1 text-sm text-charcoal/60">
+                  Warm, family-oriented bazaars, charity sales, and neighborhood gatherings.
+                </p>
+              </div>
+            </div>
+            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {(communityEvents.length > 0 ? communityEvents : upcomingEvents.slice(0, 3)).map(
+                (event) => (
+                  <PublicDiscoveryEventCard key={event.id} event={event} />
+                ),
+              )}
             </div>
           </div>
         </section>
@@ -183,7 +162,7 @@ export default async function HomePage() {
           <div className="mx-auto max-w-6xl">
             <h2 className="text-2xl font-bold text-charcoal">Browse By State or Province</h2>
             <p className="mt-1 text-sm text-charcoal/60">
-              Choose any state or province to see the largest cities and browse garage sales nearby.
+              Regional discovery for long-tail local search — states, cities, and event types.
             </p>
             <div className="mt-6 max-w-2xl">
               <BrowseByState />
@@ -192,44 +171,45 @@ export default async function HomePage() {
         </section>
 
         <section className="px-4 py-14">
-          <div className="mx-auto max-w-6xl rounded-3xl border border-teal-100 bg-white p-8 md:p-10">
+          <div className="mx-auto max-w-6xl overflow-hidden rounded-3xl bg-gradient-to-br from-teal to-teal/85 p-8 text-white md:p-12">
             <div className="grid gap-8 md:grid-cols-2 md:items-center">
               <div>
-                <h2 className="text-2xl font-bold text-charcoal">Organizing a neighborhood sale?</h2>
-                <p className="mt-4 text-charcoal/70">
-                  Create a shareable event page, invite participating homes, approve listings, and
-                  publish an interactive map shoppers can browse before they arrive.
+                <h2 className="text-2xl font-bold md:text-3xl">Promote Your Local Event Like a Pro</h2>
+                <p className="mt-4 text-white/85">
+                  Create a cinematic event page, publish an interactive map, and help your community
+                  discover what&apos;s happening nearby.
                 </p>
               </div>
-              <div className="grid gap-4 sm:grid-cols-3">
-                {[
-                  { icon: MapPin, label: "Interactive maps" },
-                  { icon: Search, label: "Category browsing" },
-                  { icon: Sparkles, label: "Invite homeowners" },
-                ].map(({ icon: Icon, label }) => (
-                  <div
-                    key={label}
-                    className="rounded-2xl border border-teal-100 bg-cream px-4 py-5 text-center"
-                  >
-                    <Icon className="mx-auto h-6 w-6 text-teal" />
-                    <p className="mt-2 text-sm font-medium text-charcoal">{label}</p>
-                  </div>
-                ))}
+              <div className="flex flex-wrap gap-3 md:justify-end">
+                <Link
+                  href="/pricing"
+                  className="inline-flex items-center gap-2 rounded-full bg-coral px-6 py-3 font-bold text-white hover:bg-coral/90"
+                >
+                  Create Event
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
+                <Link
+                  href="/event/maplewood-community-garage-sale"
+                  className="rounded-full border border-white/40 px-6 py-3 font-medium text-white hover:bg-white/10"
+                >
+                  View Sample Event
+                </Link>
               </div>
             </div>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                href="/pricing"
-                className="rounded-full bg-coral px-6 py-3 font-bold text-white hover:bg-coral/90"
-              >
-                See Pricing
-              </Link>
-              <Link
-                href="/event/maplewood-community-garage-sale"
-                className="rounded-full border border-teal px-6 py-3 font-medium text-teal hover:bg-teal/5"
-              >
-                View Sample Event
-              </Link>
+            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              {[
+                { icon: MapPin, label: "Interactive maps" },
+                { icon: Sparkles, label: "Category discovery" },
+                { icon: ArrowRight, label: "Shareable event pages" },
+              ].map(({ icon: Icon, label }) => (
+                <div
+                  key={label}
+                  className="rounded-2xl border border-white/15 bg-white/10 px-4 py-5 text-center backdrop-blur-sm"
+                >
+                  <Icon className="mx-auto h-6 w-6" />
+                  <p className="mt-2 text-sm font-medium">{label}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>

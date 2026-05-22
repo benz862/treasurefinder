@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { DiscoveryMap } from "@/components/DiscoveryMap";
 import { CategoryChips } from "@/components/CategoryChips";
 import { PublicDiscoveryEventCard } from "@/components/PublicDiscoveryEventCard";
 import { filterByEventCategories } from "@/lib/inferEventCategory";
+import { getCategoryBySlug } from "@/lib/eventCategories";
 import type { EventCategoryKey } from "@/lib/eventCategories";
 import type { DiscoveryEvent } from "@/lib/discovery";
 
@@ -13,9 +15,20 @@ interface ExploreMapClientProps {
 }
 
 export function ExploreMapClient({ initialEvents }: ExploreMapClientProps) {
-  const [categories, setCategories] = useState<EventCategoryKey[]>([]);
+  const searchParams = useSearchParams();
+  const typeSlug = searchParams.get("type");
+
+  const [categories, setCategories] = useState<EventCategoryKey[]>(() => {
+    const cat = typeSlug ? getCategoryBySlug(typeSlug) : undefined;
+    return cat ? [cat.key] : [];
+  });
   const [locating, setLocating] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+  useEffect(() => {
+    const cat = typeSlug ? getCategoryBySlug(typeSlug) : undefined;
+    if (cat) setCategories([cat.key]);
+  }, [typeSlug]);
 
   const filteredEvents = useMemo(() => {
     let results = filterByEventCategories(initialEvents, categories);
@@ -71,6 +84,7 @@ export function ExploreMapClient({ initialEvents }: ExploreMapClientProps) {
         events={filteredEvents}
         showCategoryFilters
         previewOnClick
+        userLocation={userLocation}
         className="h-[360px] w-full rounded-2xl sm:h-[480px] md:h-[560px]"
       />
 

@@ -34,6 +34,8 @@ interface MapViewProps {
   nationwideView?: boolean;
   /** Show floating preview card flow instead of navigating on pin click. */
   previewMode?: boolean;
+  /** Cluster nearby discovery pins when zoomed out. */
+  enableClustering?: boolean;
   onPinClick?: (pinId: string) => void;
   selectedPinId?: string | null;
   className?: string;
@@ -50,24 +52,24 @@ function mapsApiReady() {
   return Boolean(window.google?.maps?.Map && window.google?.maps?.Geocoder);
 }
 
-function pinMarkerStyle(pin: MapPin, selectedPinId?: string | null) {
+function pinMarkerStyle(pin: MapPin, selectedPinId?: string | null, hoverScale = 1) {
   const isHQ = pin.id === EVENT_HQ_PIN_ID;
   const isSelected = selectedPinId === pin.id;
   const isDiscovery = Boolean(pin.href);
 
   if (isDiscovery && pin.category && typeof google !== "undefined") {
     const cat = getCategoryByKey(pin.category);
-    const scale = isSelected ? 1.2 : 1;
+    const baseScale = isSelected ? 1.2 : hoverScale;
     return {
       url: buildMarkerSvgDataUrl(cat.color, cat.markerIcon),
-      scaledSize: new google.maps.Size(36 * scale, 44 * scale),
-      anchor: new google.maps.Point(18 * scale, 44 * scale),
+      scaledSize: new google.maps.Size(36 * baseScale, 44 * baseScale),
+      anchor: new google.maps.Point(18 * baseScale, 44 * baseScale),
     };
   }
 
   return {
     path: google.maps.SymbolPath.CIRCLE,
-    scale: isHQ ? 11 : isSelected ? 12 : 9,
+    scale: isHQ ? 11 : isSelected ? 12 : hoverScale > 1 ? 10 : 9,
     fillColor: isHQ
       ? "#FFD93D"
       : isDiscovery
@@ -77,8 +79,53 @@ function pinMarkerStyle(pin: MapPin, selectedPinId?: string | null) {
           : "#1A6B6B",
     fillOpacity: 1,
     strokeColor: isHQ ? "#2D3436" : "#FFFFFF",
-    strokeWeight: 2,
+    strokeWeight: isSelected ? 3 : 2,
   };
+}
+
+type PinCluster = {
+  id: string;
+  lat: number;
+  lng: number;
+  pins: MapPin[];
+  color: string;
+};
+
+function clusterDiscoveryPins(pins: MapPin[], zoom: number): PinCluster[] {
+  const discoveryPins = pins.filter((pin) => pin.href);
+  if (zoom >= 9 || discoveryPins.length < 2) {
+    return [];
+  }
+
+  const cellSize = zoom <= 5 ? 8 : zoom <= 7 ? 4 : 2;
+  const buckets = new Map<string, MapPin[]>();
+
+  for (const pin of discoveryPins) {
+    const key = `${Math.round(pin.lat / cellSize)}:${Math.round(pin.lng / cellSize)}`;
+    const list = buckets.get(key) || [];
+    list.push(pin);
+    buckets.set(key, list);
+  }
+
+  const clusters: PinCluster[] = [];
+  for (const [key, group] of buckets) {
+    if (group.length < 2) continue;
+    const lat = group.reduce((sum, pin) => sum + pin.lat, 0) / group.length;
+    const lng = group.reduce((sum, pin) => sum + pin.lng, 0) / group.length;
+    const firstCategory = group[0].category ? getCategoryByKey(group[0].category!).color : "#1A6B6B";
+    clusters.push({ id: `cluster-${key}`, lat, lng, pins: group, color: firstCategory });
+  }
+
+  return clusters;
+}
+
+function buildClusterIcon(count: number, color: string) {
+  const size = count > 99 ? 52 : count > 9 ? 46 : 40;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 2}" fill="${color}" fill-opacity="0.92" stroke="#ffffff" stroke-width="3"/>
+    <text x="50%" y="54%" text-anchor="middle" fill="#ffffff" font-family="system-ui,sans-serif" font-size="${count > 99 ? 12 : 14}" font-weight="700">${count}</text>
+  </svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
 function clientGeocode(input: GeocodeInput): Promise<{ lat: number; lng: number } | null> {
@@ -180,6 +227,7 @@ export function MapView({
   center,
   nationwideView = false,
   previewMode = false,
+  enableClustering = true,
   onPinClick,
   selectedPinId,
   className = "h-[400px] w-full rounded-2xl",
@@ -187,11 +235,14 @@ export function MapView({
   const mapRef = useRef<HTMLDivElement>(null);
   const googleMapRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
+  const pulseCirclesRef = useRef<google.maps.Circle[]>([]);
   const onPinClickRef = useRef(onPinClick);
   const lastCameraKeyRef = useRef("");
+  const hoverPinIdRef = useRef<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [resolvedPins, setResolvedPins] = useState<MapPin[]>(pins);
+  const [mapZoom, setMapZoom] = useState(US_MAP_ZOOM);
 
   const geocodeKey = useMemo(
     () =>
@@ -393,18 +444,100 @@ export function MapView({
           gestureHandling: "greedy",
           styles: [{ featureType: "poi", stylers: [{ visibility: "off" }] }],
         });
+
+        googleMapRef.current.addListener("zoom_changed", () => {
+          const zoom = googleMapRef.current?.getZoom();
+          if (zoom != null) setMapZoom(zoom);
+        });
       }
 
       markersRef.current.forEach((marker) => marker.setMap(null));
       markersRef.current = [];
+      pulseCirclesRef.current.forEach((circle) => circle.setMap(null));
+      pulseCirclesRef.current = [];
+
+      const clusters = enableClustering
+        ? clusterDiscoveryPins(resolvedPins, mapZoom)
+        : [];
+      const clusteredPinIds = new Set(clusters.flatMap((cluster) => cluster.pins.map((pin) => pin.id)));
+
+      const refreshMarkerIcons = () => {
+        markersRef.current.forEach((marker) => {
+          const pinId = marker.get("pinId") as string | undefined;
+          const pin = resolvedPins.find((item) => item.id === pinId);
+          if (!pin) return;
+          marker.setIcon(
+            pinMarkerStyle(
+              pin,
+              selectedPinId,
+              hoverPinIdRef.current === pinId ? 1.12 : 1,
+            ),
+          );
+        });
+      };
+
+      for (const cluster of clusters) {
+        const marker = new google.maps.Marker({
+          position: { lat: cluster.lat, lng: cluster.lng },
+          map: googleMapRef.current!,
+          icon: {
+            url: buildClusterIcon(cluster.pins.length, cluster.color),
+            scaledSize: new google.maps.Size(44, 44),
+            anchor: new google.maps.Point(22, 22),
+          },
+          zIndex: 1000 + cluster.pins.length,
+        });
+
+        marker.addListener("click", () => {
+          googleMapRef.current?.setCenter({ lat: cluster.lat, lng: cluster.lng });
+          googleMapRef.current?.setZoom(Math.min((googleMapRef.current.getZoom() ?? mapZoom) + 2, 14));
+        });
+
+        markersRef.current.push(marker);
+      }
 
       resolvedPins.forEach((pin) => {
+        if (clusteredPinIds.has(pin.id)) return;
+
         const marker = new google.maps.Marker({
           position: { lat: pin.lat, lng: pin.lng },
           map: googleMapRef.current!,
           title: pin.title,
-          icon: pinMarkerStyle(pin, selectedPinId),
-          optimized: true,
+          icon: pinMarkerStyle(
+            pin,
+            selectedPinId,
+            hoverPinIdRef.current === pin.id ? 1.12 : 1,
+          ),
+          optimized: false,
+          zIndex: selectedPinId === pin.id ? 900 : pin.href ? 500 : 100,
+        });
+
+        marker.set("pinId", pin.id);
+
+        if (pin.href && pin.category && selectedPinId === pin.id) {
+          const cat = getCategoryByKey(pin.category);
+          const pulse = new google.maps.Circle({
+            map: googleMapRef.current!,
+            center: { lat: pin.lat, lng: pin.lng },
+            radius: 120,
+            fillColor: cat.color,
+            fillOpacity: 0.15,
+            strokeColor: cat.color,
+            strokeOpacity: 0.35,
+            strokeWeight: 2,
+            clickable: false,
+          });
+          pulseCirclesRef.current.push(pulse);
+        }
+
+        marker.addListener("mouseover", () => {
+          hoverPinIdRef.current = pin.id;
+          refreshMarkerIcons();
+        });
+
+        marker.addListener("mouseout", () => {
+          if (hoverPinIdRef.current === pin.id) hoverPinIdRef.current = null;
+          refreshMarkerIcons();
         });
 
         if (pin.href) {
@@ -440,7 +573,7 @@ export function MapView({
         "Google Maps failed to initialize. Confirm billing is enabled and Maps JavaScript API is turned on."
       );
     }
-  }, [loaded, resolvedPins, center, selectedPinId, nationwideView, previewMode]);
+  }, [loaded, resolvedPins, center, selectedPinId, nationwideView, previewMode, enableClustering, mapZoom]);
 
   if (error) {
     return (

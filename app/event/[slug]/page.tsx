@@ -4,10 +4,15 @@ import { Header, Footer } from "@/components/Layout";
 import { PublicEventPage } from "@/components/PublicEventPage";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { buildEventJsonLd } from "@/lib/eventSchema";
 import { geocodeAddress } from "@/lib/maps";
+import { getMapEvents } from "@/lib/discovery";
+import { getCategoryByKey } from "@/lib/eventCategories";
+import { inferEventCategory } from "@/lib/inferEventCategory";
+import { getSeedEventBySlug } from "@/lib/seedPublicEvents";
 import { SAMPLE_EVENT_SLUG } from "@/lib/sample-event";
 import { getPublicSampleEvent } from "@/lib/server/marketing-sample";
-import { formatEventDateRange } from "@/lib/utils";
+import { formatEventDateRange, getSiteUrl } from "@/lib/utils";
 import type { EventWithHomes } from "@/types/database";
 
 interface PageProps {
@@ -18,6 +23,9 @@ async function getEvent(slug: string): Promise<EventWithHomes | null> {
   if (slug === SAMPLE_EVENT_SLUG) {
     return getPublicSampleEvent();
   }
+
+  const seedEvent = getSeedEventBySlug(slug);
+  if (seedEvent) return seedEvent;
 
   const supabase = await createClient();
   const { data: event } = await supabase
@@ -67,28 +75,62 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const event = await getEvent(slug);
   if (!event) return { title: "Event Not Found" };
 
+  const category = getCategoryByKey(inferEventCategory(event));
+  const description =
+    event.description ||
+    `${category.label} in ${event.city}, ${event.region}. Browse the interactive map and discover local treasures.`;
+  const url = `${getSiteUrl()}/event/${event.slug}`;
+
   return {
     title: `${event.title} | ${formatEventDateRange(event.event_date, event.event_end_date)}`,
-    description:
-      event.description ||
-      `Browse participating homes and view the interactive map for ${event.title}.`,
+    description,
+    keywords: [
+      category.label,
+      event.city,
+      event.region,
+      "local events",
+      "treasure finder",
+    ],
+    alternates: { canonical: url },
     openGraph: {
       title: event.title,
-      description: event.description || undefined,
+      description,
+      url,
+      type: "website",
+      locale: "en_US",
+      images: event.banner_image_url
+        ? [{ url: `${getSiteUrl()}${event.banner_image_url}`, alt: event.title }]
+        : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: event.title,
+      description,
+      images: event.banner_image_url ? [`${getSiteUrl()}${event.banner_image_url}`] : undefined,
     },
   };
 }
 
 export default async function EventPage({ params }: PageProps) {
   const { slug } = await params;
-  const event = await getEvent(slug);
+  const [event, nearbyEvents] = await Promise.all([getEvent(slug), getMapEvents()]);
 
   if (!event) notFound();
 
+  const jsonLd = buildEventJsonLd(event);
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Header />
-      <PublicEventPage event={event} isSample={slug === SAMPLE_EVENT_SLUG} />
+      <PublicEventPage
+        event={event}
+        isSample={slug === SAMPLE_EVENT_SLUG}
+        nearbyEvents={nearbyEvents}
+      />
       <Footer />
     </>
   );
